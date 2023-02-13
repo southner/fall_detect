@@ -44,13 +44,14 @@ def cache_Rad(data_path=config['dataset']['init_data_path'],
             'ra_file' : str(ra_file),
             're_file' : str(re_file),
             'tag_file' : str(tag_file),
+            'pic_file' : sample['pic'],
             # 'image_file': image_file,
         })
 
         np.save(str(rd_file), sample['RD'],allow_pickle=True)
         np.save(str(ra_file), sample['RA'],allow_pickle=True)
         np.save(str(re_file), sample['RE'],allow_pickle=True)
-        np.save(str(tag_file), sample['Tag'],allow_pickle=True)
+        np.save(str(tag_file), sample['Tag'],allow_pickle=True) 
         
         if i % 100 == 0:
             print('(Preprocessing): {:0>6d} Done || {:0>6d} Left || {:0>5.0f} s'.format(

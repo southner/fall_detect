@@ -45,7 +45,8 @@ class RadDateset(Dataset):
             radar_data_azimuth = np.transpose(radar_data['azimuth_res'],(0,-1,-2))
             radar_data_elevation = np.transpose(radar_data['elevation_res'],(0,-1,-2))
             
-            range_data = np.load(opt.join(dir,'skeleton_range_res.npy'))
+            range_data = np.load(opt.join(dir,'skeleton_range_xz_res.npy'))/1000
+            # x_data = np.load(opt.join(dir,'skeleton_range_res.npy'))
             for frame_index_begin in range(0,frame_num-30,2): #0-27 2-29 ... 414-441
                 slice = [i for i in range(frame_index_begin,frame_index_begin+30,3)]
                 sample = {}
@@ -53,6 +54,7 @@ class RadDateset(Dataset):
                 sample['RA'] = radar_data_azimuth[slice,1:,:]
                 sample['RE'] = radar_data_elevation[slice,1:,:]
                 sample['Tag'] = np.zeros([13,8]) #(mid,range,confidence)*2+label(one_hot)
+                sample['pic'] = opt.join(dir,'color_res/{:0>5d}.jpg'.format(frame_index_begin+12))
                 mid = frame_index_begin+15
                 for person_id in range(0,3):
                     person_range = range_data[mid,person_id]
@@ -86,6 +88,7 @@ class RadDateset(Dataset):
             for fall_index in range(1,4):
                 if dir_name[-fall_index]=='':
                     continue
+                fall_index = dir_name[-fall_index]
                 for bias in range(-5,8):  #23-53   
                     slice = [i for i in range(fall_index-15+bias,fall_index+15+bias,3)]
                     # 0-39  20  5-32 0-27 12-40
@@ -94,6 +97,7 @@ class RadDateset(Dataset):
                     sample['RA'] = radar_data_azimuth[slice,1:,:]
                     sample['RE'] = radar_data_elevation[slice,1:,:]
                     sample['Tag'] = np.zeros([13,8]) #(mid,range,confidence,label)
+                    sample['pic'] = opt.join(dir,'color_res/{:0>5d}.jpg'.format(fall_index+bias))
                     mid = frame_index_begin+15
                     for person_id in range(0,1):
                         person_range = range_data[mid,person_id]

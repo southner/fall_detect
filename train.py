@@ -10,6 +10,7 @@ from torch.optim.lr_scheduler import StepLR
 import time
 import argparse
 import yaml
+from show_res import visualize_fall
 
 parser = argparse.ArgumentParser()            # 创建参数解析器
 parser.add_argument('--config', default='./config/sconfig_v1.yaml', type=str)   # 添加参数
@@ -82,7 +83,7 @@ def main():
         evaluate(e, model, val_data_loader, criterion, optimizer)
 
         lr_scheduler.step()
-        # writer.flush()
+        writer.flush()
 
         torch.save(model.state_dict(), log_path['final_model_path'])
         
@@ -97,7 +98,8 @@ def main():
 def train(epoch, model, data_loader, criterion, optimizer):
     total_loss = 0
     total_batch = 0
-    for i, (rd,ra,re,tag) in enumerate(data_loader):
+    figure_index = 0
+    for i, (rd,ra,re,tag,pic) in enumerate(data_loader):
         
         rd = rd.to(device)
         ra = ra.to(device)
@@ -117,7 +119,9 @@ def train(epoch, model, data_loader, criterion, optimizer):
         if i % 10 == 0:
             print('epoch:{:0>3d} || batch {:0>3d} with loss:{:>10f} '
                   .format(epoch, i,  loss))
-
+            fig = visualize_fall(rd[0,5],ra[0,5],re[0,5],pic[0],tag,predict)
+            writer.add_figure('train_show',fig,figure_index)
+            figure_index+=1
     del rd
     del ra
     del re
@@ -131,7 +135,7 @@ def evaluate(epoch, model, data_loader, criterion, optimizer):
     # evaluate loss
     total_loss = 0
     total_batch = 0
-    for i, (rd,ra,re,tag) in enumerate(data_loader):
+    for i, (rd,ra,re,tag,pic) in enumerate(data_loader):
         
         rd = rd.to(device)
         ra = ra.to(device)

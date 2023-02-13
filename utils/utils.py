@@ -33,9 +33,10 @@ class MyLoss(nn.Module):
         #total_loss = (l_coord*loc_loss + contain_loss + not_contain_loss + l_noobj*nooobj_loss + class_loss)
         super(MyLoss,self).__init__()
         self.loss = nn.MSELoss()
-        self.l_coord = 0.5
-        self.l_noobj = 10
-        self.class_scale = 2
+        self.l_coord = 1
+        self.l_noobj = 1
+        self.cotain_scale = 1
+        self.class_scale = 1
         self.threld = 0.2
     def compute_iou(self,box1, box2):
         pass
@@ -149,7 +150,7 @@ class MyLoss(nn.Module):
         #not_contain_loss 两个预测框 不相应的那个的置信度loss 让它更贴近0
         #nooobj_loss 本来无预测有的置信度loss
         #class_loss 类别loss
-        total_loss = (self.l_coord*loc_loss + contain_loss + not_contain_loss + self.l_noobj*nooobj_loss + self.class_scale*class_loss)+1e-6
+        total_loss = (self.l_coord*loc_loss + class_loss*contain_loss + not_contain_loss + self.l_noobj*nooobj_loss + self.class_scale*class_loss)+1e-6
 
         return total_loss
 

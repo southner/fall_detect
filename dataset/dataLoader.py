@@ -4,6 +4,10 @@ import json
 import numpy as np
 import torch
 from torch.utils.data import random_split, SubsetRandomSampler
+import yaml
+
+with open('./config/sconfig_v1.yaml') as f:
+        config = yaml.safe_load(f)
 
 class RadDatesetCacheDataset(Dataset):
     def __init__(self,
@@ -21,19 +25,20 @@ class RadDatesetCacheDataset(Dataset):
         ra = np.load(self.samples[i]['ra_file'],allow_pickle=True)
         re = np.load(self.samples[i]['re_file'],allow_pickle=True)
         tag = np.load(self.samples[i]['tag_file'],allow_pickle=True)
-        return rd[:,:],ra,re,tag
+        pic = self.samples[i]['pic_file']
+        return rd[:,:],ra,re,tag,pic
 
     def __len__(self):
         return len(self.samples)
 
     @staticmethod
     def collate_fn(batch):
-        rd,ra,re,tag  = zip(*batch)
+        rd,ra,re,tag,pic  = zip(*batch)
         rd = np.stack(rd).astype(np.float32)
         ra = np.stack(ra).astype(np.float32)
         re = np.stack(re).astype(np.float32)
         tag = np.stack(tag).astype(np.float32)
-        return torch.tensor(rd,requires_grad=True),torch.tensor(ra,requires_grad=True),torch.tensor(re,requires_grad=True),torch.tensor(tag,requires_grad=True)
+        return torch.tensor(rd,requires_grad=True),torch.tensor(ra,requires_grad=True),torch.tensor(re,requires_grad=True),torch.tensor(tag,requires_grad=True),pic
         
 def create_dataloader(
     data_path='data',
@@ -54,7 +59,7 @@ def create_dataloader(
 
 
 def create_dataloaders(
-    data_path='ske_fall_data',
+    data_path='data_res/{}'.format(config['dataset']['save_path']),
     train_ratio=0.8,
     batch_size=32,
     random_seed=125,
