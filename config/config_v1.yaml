@@ -1,0 +1,26 @@
+!!python/object:argparse.Namespace
+batch_size: 64
+best_model:
+  epoch: 0
+  loss: 1000
+config_file: /home/zhang_t/workspace/weihao/config/config_v1.yaml
+data_version: data_v1
+epoch: 100
+interval: 10
+load_pretraine_model: false
+loss_alpha: 0.12
+lr:
+  base_learning_rate: 4.0e-05
+  gamma: 0.6
+  step_size: 10
+model_version: model_v1
+num_works: 4
+path:
+  best_model_path: ./runs/2023.02.04-22-49/best
+  config_path: ./runs/2023.02.04-22-49/config.json
+  final_model_path: ./runs/2023.02.04-22-49/final
+  save_path: ske_fall_data
+  train_data: ''
+  train_log_path: ./runs/2023.02.04-22-49/TrainLog
+pretrained_model_path: ./runs/2022.12.12-23-01/final.pt
+train_marks: {}
