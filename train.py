@@ -50,6 +50,7 @@ def main():
     #     writer.add_text('train_mark_{}'.format(name), mark)
 
     train_dataset, train_data_loader, val_data_loader = create_dataloaders(
+        data_path='data_res/{}'.format(config['dataset']['save_path']),
         batch_size=config['train']['batch_size'],
         num_workers=config['train']['num_workers']
     )

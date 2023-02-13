@@ -7,14 +7,13 @@ from torch.utils.data import random_split, SubsetRandomSampler
 
 class RadDatesetCacheDataset(Dataset):
     def __init__(self,
-                 data_path='data',
-                 version='1'):
+                 data_path='data'):
 
         super(RadDatesetCacheDataset, self).__init__()
 
         self.data_path = data_path
         
-        with open('{}/cached/{}.json'.format(data_path, version), 'r') as file:
+        with open('{}/cached/1.json'.format(data_path), 'r') as file:
             self.samples = json.load(file)
 
     def __getitem__(self, i):
@@ -38,12 +37,11 @@ class RadDatesetCacheDataset(Dataset):
         
 def create_dataloader(
     data_path='data',
-    version='1',
     batch_size=8,
     num_workers=1,
 ):
 
-    dataset = RadDatesetCacheDataset(data_path=data_path, version=version)
+    dataset = RadDatesetCacheDataset(data_path=data_path)
 
     dataloader = DataLoader(
         dataset,
@@ -57,7 +55,6 @@ def create_dataloader(
 
 def create_dataloaders(
     data_path='ske_fall_data',
-    version='1',
     train_ratio=0.8,
     batch_size=32,
     random_seed=125,
@@ -67,8 +64,7 @@ def create_dataloaders(
     """
     assert(train_ratio > 0 and train_ratio < 1)
 
-    dataset = RadDatesetCacheDataset(data_path=data_path,
-                                    version=version)
+    dataset = RadDatesetCacheDataset(data_path=data_path)
     
     sample_count = len(dataset)
     train_index, val_index = \

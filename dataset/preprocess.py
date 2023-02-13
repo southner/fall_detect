@@ -10,8 +10,7 @@ with open('./config/sconfig_v1.yaml') as f:
         config = yaml.safe_load(f)
 
 def cache_Rad(data_path=config['dataset']['init_data_path'],
-            save_path =config['dataset']['save_path'],
-            verson = config['dataset']['data_version']):
+            save_path ='data_res/{}'.format(config['dataset']['save_path'])):
     dataset = RadDateset(data_path)
     rd_folder = Path(save_path) / 'cached/rd'
     ra_folder = Path(save_path) / 'cached/ra'
@@ -57,7 +56,7 @@ def cache_Rad(data_path=config['dataset']['init_data_path'],
             print('(Preprocessing): {:0>6d} Done || {:0>6d} Left || {:0>5.0f} s'.format(
                 i, sample_num-i, time.time()-time_start))
 
-    with open('{}/cached/{}.json'.format(save_path,verson), 'w') as file:
+    with open('{}/cached/1.json'.format(save_path), 'w') as file:
         json.dump(samples_info, file)
 
 

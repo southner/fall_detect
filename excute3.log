@@ -1,0 +1,142 @@
+nohup: 忽略输入
+/home/zhang_t/workspace/southner/model/ResAttentionNet.py:252: UserWarning: Implicit dimension choice for softmax has been deprecated. Change the call to include dim=X as an argument.
+  fall_res[:,:,[6,7]] = self.softmax(fall_res[:,:,[6,7]])
+/home/zhang_t/workspace/southner/utils/utils.py:102: UserWarning: indexing with dtype torch.uint8 is now deprecated, please use a dtype torch.bool instead. (Triggered internally at /opt/conda/conda-bld/pytorch_1670525551200/work/aten/src/ATen/native/IndexingUtils.h:27.)
+  noo_pred_c = noo_pred[noo_pred_mask]
+/home/zhang_t/workspace/southner/utils/utils.py:103: UserWarning: indexing with dtype torch.uint8 is now deprecated, please use a dtype torch.bool instead. (Triggered internally at /opt/conda/conda-bld/pytorch_1670525551200/work/aten/src/ATen/native/IndexingUtils.h:27.)
+  noo_target_c = noo_target[noo_pred_mask]
+/home/zhang_t/.conda/envs/mmwave/lib/python3.9/site-packages/torch/nn/_reduction.py:42: UserWarning: size_average and reduce args will be deprecated, please use reduction='sum' instead.
+  warnings.warn(warning.format(ret))
+/home/zhang_t/workspace/southner/utils/utils.py:132: UserWarning: indexing with dtype torch.uint8 is now deprecated, please use a dtype torch.bool instead. (Triggered internally at /opt/conda/conda-bld/pytorch_1670525551200/work/aten/src/ATen/native/IndexingUtils.h:27.)
+  box_pred_response = box_pred[coo_response_mask].view(-1,3)
+/home/zhang_t/workspace/southner/utils/utils.py:133: UserWarning: indexing with dtype torch.uint8 is now deprecated, please use a dtype torch.bool instead. (Triggered internally at /opt/conda/conda-bld/pytorch_1670525551200/work/aten/src/ATen/native/IndexingUtils.h:27.)
+  box_target_response = box_target[coo_response_mask].view(-1,3)
+/home/zhang_t/workspace/southner/utils/utils.py:139: UserWarning: indexing with dtype torch.uint8 is now deprecated, please use a dtype torch.bool instead. (Triggered internally at /opt/conda/conda-bld/pytorch_1670525551200/work/aten/src/ATen/native/IndexingUtils.h:27.)
+  box_pred_not_response = box_pred[coo_not_response_mask].view(-1,3)
+/home/zhang_t/workspace/southner/utils/utils.py:140: UserWarning: indexing with dtype torch.uint8 is now deprecated, please use a dtype torch.bool instead. (Triggered internally at /opt/conda/conda-bld/pytorch_1670525551200/work/aten/src/ATen/native/IndexingUtils.h:27.)
+  box_target_not_response = box_target[coo_not_response_mask].view(-1,3)
+/home/zhang_t/.conda/envs/mmwave/lib/python3.9/site-packages/torch/autograd/__init__.py:197: UserWarning: indexing with dtype torch.uint8 is now deprecated, please use a dtype torch.bool instead. (Triggered internally at /opt/conda/conda-bld/pytorch_1670525551200/work/aten/src/ATen/native/IndexingUtils.h:27.)
+  Variable._execution_engine.run_backward(  # Calls into the C++ engine to run the backward pass
+epoch:000 || batch 000 with loss:4012.572998 
+epoch:000 || batch 010 with loss:3190.902100 
+epoch:000 || batch 020 with loss:2626.291748 
+epoch:000 || batch 030 with loss:1821.944946 
+epoch:000 || batch 040 with loss:1339.278320 
+epoch:000 || batch 050 with loss:900.127930 
+epoch:000 || batch 060 with loss:798.723206 
+epoch:000 || batch 070 with loss:668.873291 
+epoch:000 || batch 080 with loss:524.468994 
+epoch:000 || batch 090 with loss:490.440857 
+epoch:001 || batch 000 with loss:385.228149 
+epoch:001 || batch 010 with loss:435.825745 
+epoch:001 || batch 020 with loss:299.442078 
+epoch:001 || batch 030 with loss:276.012512 
+epoch:001 || batch 040 with loss:248.706161 
+epoch:001 || batch 050 with loss:167.295349 
+epoch:001 || batch 060 with loss:136.272003 
+epoch:001 || batch 070 with loss:120.313446 
+epoch:001 || batch 080 with loss:121.009109 
+epoch:001 || batch 090 with loss:151.201828 
+epoch:002 || batch 000 with loss:113.632446 
+epoch:002 || batch 010 with loss:122.624695 
+epoch:002 || batch 020 with loss:104.628426 
+epoch:002 || batch 030 with loss: 99.895691 
+epoch:002 || batch 040 with loss:111.163559 
+epoch:002 || batch 050 with loss:125.928940 
+epoch:002 || batch 060 with loss:122.860825 
+epoch:002 || batch 070 with loss:102.426407 
+epoch:002 || batch 080 with loss:102.815887 
+epoch:002 || batch 090 with loss:100.319977 
+epoch:003 || batch 000 with loss:100.633347 
+epoch:003 || batch 010 with loss:114.023018 
+epoch:003 || batch 020 with loss:105.483734 
+epoch:003 || batch 030 with loss:105.958359 
+epoch:003 || batch 040 with loss:100.990601 
+epoch:003 || batch 050 with loss:105.964828 
+epoch:003 || batch 060 with loss:104.430382 
+epoch:003 || batch 070 with loss: 99.743187 
+epoch:003 || batch 080 with loss:109.689682 
+epoch:003 || batch 090 with loss: 99.494072 
+epoch:004 || batch 000 with loss:101.448700 
+epoch:004 || batch 010 with loss:101.907036 
+epoch:004 || batch 020 with loss:101.574310 
+epoch:004 || batch 030 with loss: 99.265358 
+epoch:004 || batch 040 with loss:122.687805 
+epoch:004 || batch 050 with loss:102.056618 
+epoch:004 || batch 060 with loss: 96.661011 
+epoch:004 || batch 070 with loss: 97.068787 
+epoch:004 || batch 080 with loss: 96.120720 
+epoch:004 || batch 090 with loss: 97.768425 
+epoch:005 || batch 000 with loss: 93.577187 
+epoch:005 || batch 010 with loss:102.347046 
+epoch:005 || batch 020 with loss: 95.952927 
+epoch:005 || batch 030 with loss:101.103973 
+epoch:005 || batch 040 with loss: 97.029114 
+epoch:005 || batch 050 with loss:101.378052 
+epoch:005 || batch 060 with loss: 95.546700 
+epoch:005 || batch 070 with loss:113.911720 
+epoch:005 || batch 080 with loss: 95.743156 
+epoch:005 || batch 090 with loss: 92.381851 
+epoch:006 || batch 000 with loss:105.119225 
+epoch:006 || batch 010 with loss:105.061394 
+epoch:006 || batch 020 with loss:105.742798 
+epoch:006 || batch 030 with loss: 97.519623 
+epoch:006 || batch 040 with loss:111.397835 
+epoch:006 || batch 050 with loss: 96.298111 
+epoch:006 || batch 060 with loss:101.088425 
+epoch:006 || batch 070 with loss: 97.130814 
+epoch:006 || batch 080 with loss:100.380264 
+epoch:006 || batch 090 with loss:105.330704 
+epoch:007 || batch 000 with loss: 99.522415 
+epoch:007 || batch 010 with loss:105.710464 
+epoch:007 || batch 020 with loss:109.057838 
+epoch:007 || batch 030 with loss: 97.373642 
+epoch:007 || batch 040 with loss: 98.282471 
+epoch:007 || batch 050 with loss: 91.405075 
+epoch:007 || batch 060 with loss:115.467163 
+epoch:007 || batch 070 with loss:101.294876 
+epoch:007 || batch 080 with loss:107.414467 
+epoch:007 || batch 090 with loss:100.702065 
+epoch:008 || batch 000 with loss: 99.971405 
+epoch:008 || batch 010 with loss: 98.626404 
+epoch:008 || batch 020 with loss: 97.029312 
+epoch:008 || batch 030 with loss:100.311081 
+epoch:008 || batch 040 with loss: 98.202850 
+epoch:008 || batch 050 with loss: 98.771423 
+epoch:008 || batch 060 with loss: 96.038849 
+epoch:008 || batch 070 with loss: 98.664139 
+epoch:008 || batch 080 with loss:102.005188 
+epoch:008 || batch 090 with loss:100.405922 
+epoch:009 || batch 000 with loss:103.388283 
+epoch:009 || batch 010 with loss: 99.474014 
+epoch:009 || batch 020 with loss: 94.685852 
+epoch:009 || batch 030 with loss: 98.152206 
+epoch:009 || batch 040 with loss:100.176666 
+epoch:009 || batch 050 with loss: 98.961166 
+epoch:009 || batch 060 with loss: 95.749908 
+epoch:009 || batch 070 with loss: 92.804688 
+epoch:009 || batch 080 with loss:103.018295 
+Traceback (most recent call last):
+  File "/home/zhang_t/workspace/southner/train.py", line 168, in <module>
+    if __name__ == '__main__':
+  File "/home/zhang_t/workspace/southner/train.py", line 78, in main
+    model.train()   
+  File "/home/zhang_t/workspace/southner/train.py", line 106, in train
+    
+  File "/home/zhang_t/.conda/envs/mmwave/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1194, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/home/zhang_t/workspace/southner/model/ResAttentionNet.py", line 251, in forward
+    fall_res[:,:,[1,4]] = self.relu(fall_res[:,:,[1,4]])
+  File "/home/zhang_t/.conda/envs/mmwave/lib/python3.9/site-packages/torch/fx/traceback.py", line 57, in format_stack
+    return traceback.format_stack()
+  File "/home/zhang_t/.conda/envs/mmwave/lib/python3.9/traceback.py", line 197, in format_stack
+    return format_list(extract_stack(f, limit=limit))
+  File "/home/zhang_t/.conda/envs/mmwave/lib/python3.9/traceback.py", line 211, in extract_stack
+    stack = StackSummary.extract(walk_stack(f), limit=limit)
+  File "/home/zhang_t/.conda/envs/mmwave/lib/python3.9/traceback.py", line 366, in extract
+    f.line
+  File "/home/zhang_t/.conda/envs/mmwave/lib/python3.9/traceback.py", line 288, in line
+    self._line = linecache.getline(self.filename, self.lineno).strip()
+  File "/home/zhang_t/.conda/envs/mmwave/lib/python3.9/site-packages/torch/utils/data/_utils/signal_handling.py", line 66, in handler
+    _error_if_any_worker_fails()
+RuntimeError: DataLoader worker (pid 4179404) is killed by signal: Terminated. 
