@@ -1,5 +1,11 @@
 import torch
 
-x= torch.randn(10,10,256,128)
+aa = [True,True,False,False]
+bb = [True,False,True,False]
 
-X = x.reshape((5,-1,256,128))
+aa = torch.tensor(aa)
+bb = torch.tensor(bb)
+
+cc =(aa == 0) & (bb == 0)
+dd =  torch.sum(cc)
+pass

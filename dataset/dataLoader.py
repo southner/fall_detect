@@ -60,7 +60,7 @@ def create_dataloader(
 
 def create_dataloaders(
     data_path='data_res/{}'.format(config['dataset']['save_path']),
-    train_ratio=0.8,
+    train_ratio=config['train']['train_ratio'],
     batch_size=32,
     random_seed=125,
     num_workers=4
@@ -93,6 +93,7 @@ def create_dataloaders(
                             num_workers=num_workers,
                             sampler=val_sampler,
                             collate_fn=RadDatesetCacheDataset.collate_fn)
+
 
     return dataset, train_loader, val_loader
 

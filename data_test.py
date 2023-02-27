@@ -1,13 +1,14 @@
 import scipy.io as scio
 import os.path 
 import numpy as np
+import torch 
+import torch.nn as nn
 
-save_dir = r'C:\Users\ZTTTX\Desktop\workspace\experiments\data_save\2022-11-18-16-25-37'
-save_path_rd =os.path.join(save_dir,'three_tensor.mat')
-
-data = scio.loadmat(save_path_rd)
-print(type(data))
-rd = np.array(data['doppler_res'])
-ra = np.array(data['azimuth_res'])
-re = np.array(data['elevation_res'])
-print(rd.shape)
+input1 = torch.ones([32,108,64,64])
+input2 = torch.ones([32,108,64,120])
+model = nn.Sequential(
+    nn.Conv2d(108,108,[3,3],[2,1],padding=[1,1]),
+    )
+output1 = model(input1)
+output2 = model(input2)
+pass

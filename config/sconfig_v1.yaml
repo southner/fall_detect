@@ -1,19 +1,22 @@
 train:
   model_version : ResAttentionNetv1
   model_version_details : 原始版本
+  is_count : true
   load_pretrained_model : false
-  pretrained_model_path : ''
+  pretrained_model_path : '2023.02.21-16-21'
   batch_size : 32
   num_workers : 4
   epoch : 100
   log_path : ./runs/
   learning_rate :
-    base_learning_rate : 4.e-5
+    base_learning_rate : 4.e-4
     step_size : 10
     gamma : 0.6
   best_model :
     loss : 10000  #替代符 在训练过程中发现小于它的会修改，训练结束后保存
     epoch : 0
+  train_ratio : 0.8
+  threld : 0.7
 
 dataset:
   img_size:
@@ -21,8 +24,9 @@ dataset:
     doppler : 80
     angle : 64
   range_config :
-    range_res : 0.41 #0.082*5
-    range_max : 5.33 #0.082*5*13
+    range_res : 0.656 #0.082*8
+    range_max : 5.248 #0.082*8*8
+    range_num : 8
   init_data_path : "/home/zhang_t/workspace/data/data_res"
   experiments_config_path : "/home/zhang_t/workspace/data/experiments_config.xls"
   save_path : "six_people"

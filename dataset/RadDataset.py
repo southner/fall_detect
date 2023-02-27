@@ -35,6 +35,8 @@ class RadDateset(Dataset):
         
         #处理数据
         self.samples = []
+        pos_count = 0
+        neg_count = 0
         sample_index = 0 
         for dir_name in train_pos:#非跌倒 label为0
             dir = opt.join(self.data_path,dir_name[0])
@@ -45,7 +47,7 @@ class RadDateset(Dataset):
             radar_data_azimuth = np.transpose(radar_data['azimuth_res'],(0,-1,-2))
             radar_data_elevation = np.transpose(radar_data['elevation_res'],(0,-1,-2))
             
-            range_data = np.load(opt.join(dir,'skeleton_range_xz_res.npy'))/1000
+            range_data = np.load(opt.join(dir,'skeleton_range_xyz_res.npy'))/1000
             # x_data = np.load(opt.join(dir,'skeleton_range_res.npy'))
             for frame_index_begin in range(0,frame_num-30,2): #0-27 2-29 ... 414-441
                 slice = [i for i in range(frame_index_begin,frame_index_begin+30,3)]
@@ -53,9 +55,10 @@ class RadDateset(Dataset):
                 sample['RD'] = radar_data_doppler[slice,1:,:]
                 sample['RA'] = radar_data_azimuth[slice,1:,:]
                 sample['RE'] = radar_data_elevation[slice,1:,:]
-                sample['Tag'] = np.zeros([13,8]) #(mid,range,confidence)*2+label(one_hot)
+                sample['Tag'] = np.zeros([config['dataset']['range_config']['range_num'],8]) #(mid,range,confidence)*2+label(one_hot)
                 sample['pic'] = opt.join(dir,'color_res/{:0>5d}.jpg'.format(frame_index_begin+12))
                 mid = frame_index_begin+15
+                is_useful = False
                 for person_id in range(0,3):
                     person_range = range_data[mid,person_id]
                     if (np.mean(person_range)==0):
@@ -63,7 +66,7 @@ class RadDateset(Dataset):
                     if (np.mean(person_range)>=config['dataset']['range_config']['range_max']):
                         continue
                     range_index = int(np.mean(person_range)/config['dataset']['range_config']['range_res']//1)
-                    
+                    is_useful = True
                     sample['Tag'][range_index,0] = np.mean(person_range)/config['dataset']['range_config']['range_res']%1
                     sample['Tag'][range_index,1] = (person_range[1]-person_range[0])/2/config['dataset']['range_config']['range_res']
                     sample['Tag'][range_index,2] = 1
@@ -73,8 +76,9 @@ class RadDateset(Dataset):
                     sample['Tag'][range_index,6] = 1 #非跌倒
                     sample['Tag'][range_index,7] = 0 #跌倒
                     pass
-                self.samples.append(sample)
-    
+                if (is_useful):
+                    self.samples.append(sample)
+                    pos_count+=1
         for dir_name in train_neg:#跌倒 label为1
             dir = opt.join(self.data_path,dir_name[0])
             frame_num = len(listdir(opt.join(dir,'color_res')))
@@ -83,30 +87,31 @@ class RadDateset(Dataset):
             radar_data_doppler = np.transpose(radar_data['doppler_res'],(0,-1,-2))
             radar_data_azimuth = np.transpose(radar_data['azimuth_res'],(0,-1,-2))
             radar_data_elevation = np.transpose(radar_data['elevation_res'],(0,-1,-2))
-            range_data = np.load(opt.join(dir,'skeleton_range_res.npy'))
+            range_data = np.load(opt.join(dir,'skeleton_range_xyz_res.npy'))/1000
             
-            for fall_index in range(1,4):
-                if dir_name[-fall_index]=='':
+            for fall_person_index in range(1,4):
+                if dir_name[-fall_person_index]=='':
                     continue
-                fall_index = dir_name[-fall_index]
+                fall_index = dir_name[-fall_person_index]
                 for bias in range(-5,8):  #23-53   
+                    is_useful = False
                     slice = [i for i in range(fall_index-15+bias,fall_index+15+bias,3)]
                     # 0-39  20  5-32 0-27 12-40
                     sample = {}
                     sample['RD'] = radar_data_doppler[slice,1:,:]
                     sample['RA'] = radar_data_azimuth[slice,1:,:]
                     sample['RE'] = radar_data_elevation[slice,1:,:]
-                    sample['Tag'] = np.zeros([13,8]) #(mid,range,confidence,label)
+                    sample['Tag'] = np.zeros([config['dataset']['range_config']['range_num'],8]) #(mid,range,confidence,label)
                     sample['pic'] = opt.join(dir,'color_res/{:0>5d}.jpg'.format(fall_index+bias))
-                    mid = frame_index_begin+15
+                    mid = fall_index+bias
                     for person_id in range(0,1):
                         person_range = range_data[mid,person_id]
                         if (np.mean(person_range)==0):
-                            break
+                            continue
                         if (np.mean(person_range)>=config['dataset']['range_config']['range_max']):
                             continue
                         range_index = int(np.mean(person_range)/config['dataset']['range_config']['range_res']//1)
-                        
+                        is_useful = True
                         sample['Tag'][range_index,0] = np.mean(person_range)/config['dataset']['range_config']['range_res']%1
                         sample['Tag'][range_index,1] = (person_range[1]-person_range[0])/2/config['dataset']['range_config']['range_res']
                         sample['Tag'][range_index,2] = 1
@@ -116,8 +121,10 @@ class RadDateset(Dataset):
                         sample['Tag'][range_index,6] = 0 #非跌倒
                         sample['Tag'][range_index,7] = 1 #跌倒
                         pass
-                    self.samples.append(sample)
-            
+                    if (is_useful):
+                        self.samples.append(sample)
+                        neg_count+=1
+        print('pos sample num :{},neg sample num :{}'.format(pos_count,neg_count))
 
         pass
     def __getitem__(self, index):

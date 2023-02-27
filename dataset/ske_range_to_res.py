@@ -16,10 +16,11 @@ for dir_name in os.listdir(config['dataset']['init_data_path']):
     range_data_res = np.zeros([450,3,2])
     for i in range(450):
         for j in range(3):
+            # x y z 右 下 前
             one_range_data = range_data[i,j]**2
-            range_res = np.sqrt(one_range_data[:,0] + one_range_data[:,2])
-            range_data_res[i,j,0] = np.percentile(range_res,10)
-            range_data_res[i,j,1] = np.percentile(range_res,90)
+            range_res = np.sqrt(one_range_data[:,0]  +one_range_data[:,2])
+            range_data_res[i,j,0] = np.percentile(range_res,5)
+            range_data_res[i,j,1] = np.percentile(range_res,95)
     pass
     with open(opt.join(dir,'skeleton_range_xz_res.npy'),'wb') as f:
         np.save(f,range_data_res)

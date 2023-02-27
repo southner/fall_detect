@@ -2,6 +2,10 @@ from torch import nn
 import torch
 import torch.nn.functional as F
 from torch.autograd import Variable
+import yaml
+
+with open('./config/sconfig_v1.yaml') as f:
+    config = yaml.safe_load(f)
 
 class SeparateLoss(nn.Module):
     def __init__(self):
@@ -33,11 +37,12 @@ class MyLoss(nn.Module):
         #total_loss = (l_coord*loc_loss + contain_loss + not_contain_loss + l_noobj*nooobj_loss + class_loss)
         super(MyLoss,self).__init__()
         self.loss = nn.MSELoss()
-        self.l_coord = 1
+        self.loc_scale = 0.5
         self.l_noobj = 1
-        self.cotain_scale = 1
+        self.cotain_scale = 2
+        self.not_cotain_scale = 1
         self.class_scale = 1
-        self.threld = 0.2
+        self.threld = config['train']['threld']
     def compute_iou(self,box1, box2):
         pass
         #N M分别为两个box的数目
@@ -69,6 +74,10 @@ class MyLoss(nn.Module):
     
     def forward(self,pred_tensor,target_tensor):
         # （batch_size,13,4）
+        pred_tensor[:,:,[0,2,3,5]] = F.sigmoid(pred_tensor[:,:,[0,2,3,5]])
+        pred_tensor[:,:,[1,4]] = F.relu(pred_tensor[:,:,[1,4]])
+        pred_tensor[:,:,[6,7]] = F.softmax(pred_tensor[:,:,[6,7]])
+        
         coo_mask = target_tensor[:,:,2] > self.threld   #本来有的mask ==1
         noo_mask = target_tensor[:,:,2] <= self.threld  #本来没有的mask  ==0
         
@@ -150,15 +159,71 @@ class MyLoss(nn.Module):
         #not_contain_loss 两个预测框 不相应的那个的置信度loss 让它更贴近0
         #nooobj_loss 本来无预测有的置信度loss
         #class_loss 类别loss
-        total_loss = (self.l_coord*loc_loss + class_loss*contain_loss + not_contain_loss + self.l_noobj*nooobj_loss + self.class_scale*class_loss)+1e-6
+        total_loss = (self.loc_scale*loc_loss + self.cotain_scale*contain_loss + not_contain_loss + self.l_noobj*nooobj_loss + self.class_scale*class_loss)+1e-6
 
         return total_loss
 
+class CountIndex(nn.Module):
+    def __init__(self):
+        #loc_loss 本来有预测有的定位loss
+        #contain_loss 两个预测框 相应的那个的置信度loss 让它更贴近1
+        #not_contain_loss 两个预测框 不相应的那个的置信度loss 让它更贴近0
+        #nooobj_loss 本来无预测有的置信度loss
+        #class_loss 类别loss
+        #total_loss = (l_coord*loc_loss + contain_loss + not_contain_loss + l_noobj*nooobj_loss + class_loss)
+        super(CountIndex,self).__init__()
+        self.threld = config['train']['threld']
+    def forward(self,pred_tensor,target_tensor):
+        #计算 detection 
+        #计算 classify
+        pred_tensor[:,:,[0,2,3,5]] = F.sigmoid(pred_tensor[:,:,[0,2,3,5]])
+        pred_tensor[:,:,[1,4]] = F.relu(pred_tensor[:,:,[1,4]])
+        pred_tensor[:,:,[6,7]] = F.softmax(pred_tensor[:,:,[6,7]])
+        
+        
+        #计算detection指标 detect_correct：batch_size*bin_num中检测对了多少
+        #target 中是否存在目标
+        detect_tar_mask = target_tensor[:,:,2] > self.threld   
+        #选择confidence较大的box
+        detect_pred_choose = torch.max(pred_tensor[:,:,2],pred_tensor[:,:,5])
+        #pred 中是否存在目标
+        detect_pred_mask = detect_pred_choose > self.threld  
+
+        DTT = torch.sum((detect_tar_mask==1) & (detect_pred_mask==1),dim=[0,1]) 
+        DTF = torch.sum((detect_tar_mask==1) & (detect_pred_mask==0),dim=[0,1]) 
+        DFT = torch.sum((detect_tar_mask==0) & (detect_pred_mask==1),dim=[0,1]) 
+        DFF = torch.sum((detect_tar_mask==0) & (detect_pred_mask==0),dim=[0,1]) 
+        Dtotal = DTT + DTF + DFT + DFF
+
+        #计算classfy指标
+        #有对象，需要分类的数据mask
+        classsify_mask = target_tensor[:,:,2] > self.threld   
+        classsify_mask = classsify_mask.unsqueeze(-1).expand_as(target_tensor)
+        
+        #label为倒数两位
+        classsify_pred = pred_tensor[classsify_mask].view(-1,8)[:,-2:]
+        classsify_targ = target_tensor[classsify_mask].view(-1,8)[:,-2:]
+
+        #第7位是非跌倒 第8位是跌倒 若非跌倒概率高 为1
+        classsify_pred = torch.where(classsify_pred[:,0] > classsify_pred[:,1],1,0)
+        classsify_targ = torch.where(classsify_targ[:,0] > classsify_targ[:,1],1,0)
+
+        CTT = sum((classsify_targ==1) & (classsify_pred==1))              #跌倒 预测 为跌倒
+        CTF = sum((classsify_targ==1) & (classsify_pred==0))              #跌倒 预测为 非跌倒
+        CFT = sum((classsify_targ==0) & (classsify_pred==1))              #非跌倒 预测 为跌倒
+        CFF = sum((classsify_targ==0) & (classsify_pred==0))              #非跌倒 预测 为非跌倒
+
+        Ctotal = CTT + CTF + CFT + CFF
+
+        #detect时是否有目标判断正确的bin个数 判断错误的bin个数
+        #对于已知grountruth、有目标的bin，classify时 跌倒预测为跌倒的个数
+        return torch.tensor([DTT,DTF,DFT,DFF,Dtotal,CTT,CTF,CFT,CFF,Ctotal],requires_grad=False)
+
 if __name__ == '__main__':
+    res = torch.zeros([10])
     for i in range(10):
         pred = torch.rand((32,13,8),requires_grad=True).cuda()
         target = torch.tensor(pred,requires_grad=True).cuda()
-        loss = MyLoss()
-        res = loss(pred,target)
-        res.backward()
+        loss = CountIndex()
+        res += loss(pred,target)
         pass

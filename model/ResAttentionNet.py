@@ -80,6 +80,20 @@ class ResUnit(nn.Module):
         res = b1+b2
         return res
 
+class CutConv(nn.Module):
+    def __init__(self, in_channels,out_channels, kernel_size=[2,3],stride = [1,2],padding=0):
+        super(CutConv, self).__init__()
+        
+        self.m = nn.Sequential(
+            nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, stride = stride,padding=padding),
+            # BatchNorm2d是针对通道的归一化，具体对于(N,C,W,H)的输入，针对每一个C，计算一个均值和方差
+            nn.BatchNorm2d(out_channels),
+            nn.LeakyReLU(), 
+        )
+
+    def forward(self, x):
+        return self.m(x)
+
 
 class MaxInterUnit(nn.Module):
     def __init__(self, in_channels):
@@ -176,9 +190,6 @@ class mult_att(nn.Module):
         res = output.permute((0,3,1,2))
         return res
 
-
-
-
 class ResAttentionModule(nn.Module):
     def __init__(self):
         super(ResAttentionModule, self).__init__()
@@ -203,9 +214,10 @@ class ResAttentionModule(nn.Module):
         x = self.projetion2(x)
         # x = self.trunk3(x)
         # x = self.projetion3(x)
-        avg = self.avg(x)
-        avg_trans = self.avg_trans(avg.squeeze()).reshape((avg.shape[0],avg.shape[1],1,1))
-        x = x/avg_trans
+
+        # avg = self.avg(x)
+        # avg_trans = self.avg_trans(avg.squeeze()).reshape((avg.shape[0],avg.shape[1],1,1))
+        # x = x/avg_trans
         return x
 
 class ResAttentionNet(nn.Module):
@@ -214,18 +226,19 @@ class ResAttentionNet(nn.Module):
         self.rd_branch = ResAttentionModule()
         self.ra_branch = ResAttentionModule()
         self.re_branch = ResAttentionModule()
-        self.mult_att = mult_att(128,26,18)
+        self.mult_att = mult_att(128,31,24)
         self.res_process = nn.Sequential(
             ResUnit(128),
-            ResProjectionUnit(128,64,96),
+            CutConv(128,96,[1,3],[1,2],[0,1]),
             ResUnit(96),
-            ResProjectionUnit(96,64,96),
-            ResUnit(96),
-            ResProjectionUnit(96,64,128),
-            ResUnit(128),
-            ResProjectionUnit(128,128,128),
-            ResUnit(128),
-            nn.Flatten(),
+            CutConv(96,64,[1,3],[1,2],[0,1]),
+            ResUnit(64),
+            CutConv(64,64,[1,4],[1,2],[0,0]),
+            ResUnit(64),
+            CutConv(64,8,[1,2],[1,1],[0,0]),
+            ResUnit(8),
+            # ResUnit(128),
+            # nn.Flatten(),
         )
         self.fall_predict = nn.Sequential(
             nn.Linear(256,512),
@@ -243,13 +256,12 @@ class ResAttentionNet(nn.Module):
         re_feat = self.rd_branch(re)
         ra_feat = self.rd_branch(ra)
         cat = torch.concat((rd_feat,re_feat,ra_feat),dim=-1)
-        # cat_att = self.mult_att(cat)
+        cat_att = self.mult_att(cat)
         
-        res = self.res_process(cat)
-        fall_res = self.fall_predict(res).reshape((-1,13,8))
-        fall_res[:,:,[0,2,3,5]] = self.sigmoid(fall_res[:,:,[0,2,3,5]])
-        fall_res[:,:,[1,4]] = self.relu(fall_res[:,:,[1,4]])
-        fall_res[:,:,[6,7]] = self.softmax(fall_res[:,:,[6,7]])
+        res = self.res_process(cat_att)
+        # fall_res = self.fall_predict(res).reshape((-1,13,8))
+        fall_res = torch.permute(res.squeeze(),[0,2,1])
+        
         return fall_res
 
 def make_model():
