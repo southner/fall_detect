@@ -261,6 +261,9 @@ class ResAttentionNet(nn.Module):
         res = self.res_process(cat_att)
         # fall_res = self.fall_predict(res).reshape((-1,13,8))
         fall_res = torch.permute(res.squeeze(),[0,2,1])
+        fall_res[:,:,[0,2,3,5]] = F.sigmoid(fall_res[:,:,[0,2,3,5]])
+        fall_res[:,:,[1,4]] = F.relu(fall_res[:,:,[1,4]])
+        fall_res[:,:,[6,7]] = F.softmax(fall_res[:,:,[6,7]])
         
         return fall_res
 

@@ -37,7 +37,7 @@ class MyLoss(nn.Module):
         #total_loss = (l_coord*loc_loss + contain_loss + not_contain_loss + l_noobj*nooobj_loss + class_loss)
         super(MyLoss,self).__init__()
         self.loss = nn.MSELoss()
-        self.loc_scale = 0.5
+        self.loc_scale = 1
         self.l_noobj = 1
         self.cotain_scale = 2
         self.not_cotain_scale = 1
@@ -74,9 +74,9 @@ class MyLoss(nn.Module):
     
     def forward(self,pred_tensor,target_tensor):
         # （batch_size,13,4）
-        pred_tensor[:,:,[0,2,3,5]] = F.sigmoid(pred_tensor[:,:,[0,2,3,5]])
-        pred_tensor[:,:,[1,4]] = F.relu(pred_tensor[:,:,[1,4]])
-        pred_tensor[:,:,[6,7]] = F.softmax(pred_tensor[:,:,[6,7]])
+        # pred_tensor[:,:,[0,2,3,5]] = F.sigmoid(pred_tensor[:,:,[0,2,3,5]])
+        # pred_tensor[:,:,[1,4]] = F.relu(pred_tensor[:,:,[1,4]])
+        # pred_tensor[:,:,[6,7]] = F.softmax(pred_tensor[:,:,[6,7]])
         
         coo_mask = target_tensor[:,:,2] > self.threld   #本来有的mask ==1
         noo_mask = target_tensor[:,:,2] <= self.threld  #本来没有的mask  ==0
@@ -111,7 +111,7 @@ class MyLoss(nn.Module):
         noo_pred_mask[:,5] = 1
         noo_pred_c = noo_pred[noo_pred_mask]
         noo_target_c = noo_target[noo_pred_mask] 
-        nooobj_loss = F.mse_loss(noo_pred_c,noo_target_c,size_average=False)
+        nooobj_loss = F.mse_loss(F.relu(noo_pred_c-self.threld+0.3),noo_target_c,size_average=False)
 
         coo_response_mask = torch.cuda.ByteTensor(box_target.size()) #[batch_size*13*2,3]
         coo_response_mask.zero_()
@@ -131,7 +131,7 @@ class MyLoss(nn.Module):
             box2_xyxy = Variable(torch.FloatTensor(box2.size()))
             box2_xyxy[:,:1] = box2[:,:1] -0.5*box2[:,1:2]
             box2_xyxy[:,1:2] = box2[:,:1] +0.5*box2[:,1:2]
-
+            
             iou = self.compute_iou(box1_xyxy[:,:2],box2_xyxy[:,:2]) #[2,1]
             max_iou,max_index = iou.max(0)
             max_index = max_index.data.cuda()
@@ -148,7 +148,7 @@ class MyLoss(nn.Module):
         #本来有预测无 计算confidence_loss
         box_pred_not_response = box_pred[coo_not_response_mask].view(-1,3)
         box_target_not_response = box_target[coo_not_response_mask].view(-1,3)
-        box_target_not_response[:,2]= 0
+        box_target_not_response[:,2]= self.threld-0.3
         #存在可信度计算   loss的目的是让box_pred_not_response越小越好。就是想让不存在的可能性越小越好
         not_contain_loss = F.mse_loss(box_pred_not_response[:,2],box_target_not_response[:,2],size_average=False)+1e-6
 

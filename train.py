@@ -80,7 +80,7 @@ def main():
     
     for e in range(epoch):
         model.train()   
-        train(e, model, train_data_loader, criterion, optimizer)
+        train(e, model, train_data_loader, criterion, optimizer,count_criterion)
 
         model.eval()
         evaluate(e, model, val_data_loader, criterion, optimizer ,count_criterion)
@@ -96,10 +96,14 @@ def main():
     writer.close()
 
 
-def train(epoch, model, data_loader, criterion, optimizer):
+def train(epoch, model, data_loader, criterion, optimizer, count_criterion):
     total_loss = 0
     total_batch = 0
     figure_index = len(data_loader)//10*epoch
+    if (config['train']['is_count']):
+        #detection classification
+        #DTT,DTF,DFT,DFF,Dtotal, CTT,CTF,CFT,CFF,Ctotal
+        count = torch.zeros([10])
     for i, (rd,ra,re,tag,pic) in enumerate(data_loader):
         
         rd = rd.to(device)
@@ -117,8 +121,15 @@ def train(epoch, model, data_loader, criterion, optimizer):
         total_loss += loss.item()
         total_batch += 1
 
-        if i % 10 == 0:
-            print('epoch:{:0>3d} || batch {:0>3d} with loss:{:>10f} '
+        if (config['train']['is_count']):
+            count += count_criterion(predict, tag)
+
+        if i % 20 == 0:
+            if (config['train']['is_count']):
+                print('epoch:{:0>3d} || batch {:0>3d} with loss:{:>10f} \n {}'
+                  .format(epoch, i,  loss , count))
+            else:
+                print('epoch:{:0>3d} || batch {:0>3d} with loss:{:>10f}'
                   .format(epoch, i,  loss))
             fig = visualize_fall(rd[0,5],ra[0,5],re[0,5],pic[0],tag,predict)
             writer.add_figure('train_show',fig,figure_index)

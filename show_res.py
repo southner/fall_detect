@@ -97,9 +97,9 @@ def visualize_fall(rd, ra, re, pic_path, target, predict):
     re_img = show(re.detach().cpu().numpy())
     pic_img = cv2.imread(pic_path)
 
-    predict[:,:,[0,2,3,5]] = F.sigmoid(predict[:,:,[0,2,3,5]])
-    predict[:,:,[1,4]] = F.relu(predict[:,:,[1,4]])
-    predict[:,:,[6,7]] = F.softmax(predict[:,:,[6,7]])
+    # predict[:,:,[0,2,3,5]] = F.sigmoid(predict[:,:,[0,2,3,5]])
+    # predict[:,:,[1,4]] = F.relu(predict[:,:,[1,4]])
+    # predict[:,:,[6,7]] = F.softmax(predict[:,:,[6,7]])
 
     plt.subplot(241)
     plt.imshow(pic_img)

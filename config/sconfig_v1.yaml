@@ -10,13 +10,13 @@ train:
   log_path : ./runs/
   learning_rate :
     base_learning_rate : 4.e-4
-    step_size : 10
-    gamma : 0.6
+    step_size : 5
+    gamma : 0.5
   best_model :
     loss : 10000  #替代符 在训练过程中发现小于它的会修改，训练结束后保存
     epoch : 0
   train_ratio : 0.8
-  threld : 0.7
+  threld : 0.65
 
 dataset:
   img_size:
