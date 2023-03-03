@@ -174,6 +174,7 @@ class mult_att(nn.Module):
         self.out_length = out_length
 
     def forward(self, x):
+        #把时间当做channel
         '''
         x (batch_size,channel,range,d+a+a)
         '''
@@ -188,6 +189,7 @@ class mult_att(nn.Module):
         output=output.reshape((x_shape[0],x_shape[2],self.out_length,x_shape[1]))
         # 当前维度为 (batch_size,range,new(d+a+a),channel)
         res = output.permute((0,3,1,2))
+
         return res
 
 class ResAttentionModule(nn.Module):
@@ -227,6 +229,17 @@ class ResAttentionNet(nn.Module):
         self.ra_branch = ResAttentionModule()
         self.re_branch = ResAttentionModule()
         self.mult_att = mult_att(128,31,24)
+        self.att_res_process = nn.Sequential(
+            ResUnit(128),
+            CutConv(128,96,[1,3],[1,2],[0,1]),
+            ResUnit(96),
+            CutConv(96,64,[1,3],[1,2],[0,1]),
+            ResUnit(64),
+            CutConv(64,64,[1,4],[1,2],[0,0]),
+            ResUnit(64),
+            CutConv(64,8,[1,2],[1,1],[0,0]),
+            ResUnit(8),
+        )
         self.res_process = nn.Sequential(
             ResUnit(128),
             CutConv(128,96,[1,3],[1,2],[0,1]),
@@ -237,8 +250,6 @@ class ResAttentionNet(nn.Module):
             ResUnit(64),
             CutConv(64,8,[1,2],[1,1],[0,0]),
             ResUnit(8),
-            # ResUnit(128),
-            # nn.Flatten(),
         )
         self.fall_predict = nn.Sequential(
             nn.Linear(256,512),
@@ -253,13 +264,12 @@ class ResAttentionNet(nn.Module):
     def forward(self, rd,re,ra):
         # rd,re,ra = x
         rd_feat = self.rd_branch(rd)
-        re_feat = self.rd_branch(re)
-        ra_feat = self.rd_branch(ra)
+        re_feat = self.re_branch(re)
+        ra_feat = self.ra_branch(ra)
         cat = torch.concat((rd_feat,re_feat,ra_feat),dim=-1)
         cat_att = self.mult_att(cat)
         
-        res = self.res_process(cat_att)
-        # fall_res = self.fall_predict(res).reshape((-1,13,8))
+        res = self.att_res_process(cat_att)
         fall_res = torch.permute(res.squeeze(),[0,2,1])
         fall_res[:,:,[0,2,3,5]] = F.sigmoid(fall_res[:,:,[0,2,3,5]])
         fall_res[:,:,[1,4]] = F.relu(fall_res[:,:,[1,4]])
