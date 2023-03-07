@@ -228,7 +228,8 @@ class ResAttentionNet(nn.Module):
         self.rd_branch = ResAttentionModule()
         self.ra_branch = ResAttentionModule()
         self.re_branch = ResAttentionModule()
-        self.mult_att = mult_att(128,31,24)
+        # self.mult_att = mult_att(128,31,24)
+        self.mult_att = mult_att(128,23,24)
         self.att_res_process = nn.Sequential(
             ResUnit(128),
             CutConv(128,96,[1,3],[1,2],[0,1]),
@@ -265,8 +266,9 @@ class ResAttentionNet(nn.Module):
         # rd,re,ra = x
         rd_feat = self.rd_branch(rd)
         re_feat = self.re_branch(re)
-        ra_feat = self.ra_branch(ra)
-        cat = torch.concat((rd_feat,re_feat,ra_feat),dim=-1)
+        # ra_feat = self.ra_branch(ra)
+        # cat = torch.concat((rd_feat,re_feat,ra_feat),dim=-1)
+        cat = torch.concat((rd_feat,re_feat),dim=-1)
         cat_att = self.mult_att(cat)
         
         res = self.att_res_process(cat_att)
