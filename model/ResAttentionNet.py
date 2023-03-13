@@ -228,7 +228,7 @@ class ResAttentionNet(nn.Module):
         self.rd_branch = ResAttentionModule()
         self.ra_branch = ResAttentionModule()
         self.re_branch = ResAttentionModule()
-        self.mult_att = mult_att(128,31,24)
+        self.mult_att = mult_att(128,23,24)
         self.att_res_process = nn.Sequential(
             ResUnit(128),
             CutConv(128,96,[1,3],[1,2],[0,1]),
@@ -266,15 +266,15 @@ class ResAttentionNet(nn.Module):
         rd_feat = self.rd_branch(rd)
         re_feat = self.re_branch(re)
         ra_feat = self.ra_branch(ra)
-        cat = torch.concat((rd_feat,re_feat,ra_feat),dim=-1)
+        # cat = torch.concat((rd_feat,re_feat,ra_feat),dim=-1)
+        cat = torch.concat((rd_feat,ra_feat),dim=-1)
         cat_att = self.mult_att(cat)
         
         res = self.att_res_process(cat_att)
         fall_res = torch.permute(res.squeeze(),[0,2,1])
         fall_res[:,:,[0,2,3,5]] = F.sigmoid(fall_res[:,:,[0,2,3,5]])
         fall_res[:,:,[1,4]] = F.relu(fall_res[:,:,[1,4]])
-        fall_res[:,:,[6,7]] = F.softmax(fall_res[:,:,[6,7]])
-        
+        fall_res[:,:,[6,7]] = F.softmax(fall_res[:,:,[6,7]],dim=2)
         return fall_res
 
 def make_model():

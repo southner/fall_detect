@@ -42,8 +42,8 @@ class MyLoss(nn.Module):
         self.l_noobj = 1
         self.cotain_scale = 2
         self.not_cotain_scale = 1
-        self.class_scale = 0.5
-        self.fall_vs_norm_scale = 10
+        self.class_scale = 1.5
+        self.fall_vs_norm_scale = 5
         self.threld = config['train']['threld']
     def compute_iou(self,box1, box2):
         pass
@@ -165,6 +165,7 @@ class MyLoss(nn.Module):
         class_target_normal = target_tensor[coo_normal_mask].view(-1,8)[:,6]
         class_pred_fall = pred_tensor[coo_fall_mask].view(-1,8)[:,7]
         class_pred_normal = pred_tensor[coo_normal_mask].view(-1,8)[:,6]
+
         class_fall_loss = self.cross_entropy(class_pred_fall,class_target_fall) if len(class_pred_fall)>0 else 0
         class_normal_loss = self.cross_entropy(class_pred_normal+1e-0006,class_target_normal)
         class_loss =  self.fall_vs_norm_scale*class_fall_loss + class_normal_loss

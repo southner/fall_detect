@@ -60,6 +60,8 @@ def cache_Rad(data_path=config['dataset']['init_data_path'],
     with open('{}/cached/1.json'.format(save_path), 'w') as file:
         json.dump(samples_info, file)
 
+    with open('{}/cached/config.yaml'.format(save_path), 'w') as file:
+        yaml.dump(config,file,allow_unicode=True)
 
 if __name__ == "__main__":
     cache_Rad()

@@ -1,5 +1,5 @@
 
-from dataset.dataLoader import create_dataloaders
+from dataset.dataLoader import create_dataloaders,create_dataloader
 from model.ResAttentionNet import make_model
 # from model.AttentionResNet import make_model
 import torch
@@ -49,16 +49,16 @@ def main():
         writer.add_text('pretrained_model_path',
                         'NONE')
         
-
-    # 添加训练标注
-    # for name, mark in config['train_marks']:
-    #     writer.add_text('train_mark_{}'.format(name), mark)
-
-    train_dataset, train_data_loader, val_data_loader = create_dataloaders(
-        data_path='data_res/{}'.format(config['dataset']['save_path']),
-        batch_size=config['train']['batch_size'],
-        num_workers=config['train']['num_workers']
-    )
+    if config['dataset']['is_split']:
+        train_data_loader = create_dataloader()
+        val_data_loader = create_dataloader()   
+    else:
+        train_dataset, train_data_loader, val_data_loader = create_dataloaders(
+            data_path='data_res/{}'.format(config['dataset']['save_path']),
+            batch_size=config['train']['batch_size'],
+            num_workers=config['train']['num_workers']
+        )
+    
 
     #criterion = CRFLoss(alpha=config['loss_alpha'])
     criterion = MyLoss()
