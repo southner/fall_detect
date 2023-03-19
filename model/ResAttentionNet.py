@@ -330,45 +330,36 @@ class UAttentionNet(nn.Module):
 
     def __init__(self, d_r, d_a, d_v, chan):
         super(UAttentionNet, self).__init__()
-        self.rv_pre = nn.Sequential(
-            NormConv(chan, 32),
-            ResUnit(32),
-            NormConv(32, 64),
-            ResUnit(64)
-        )
-        self.ra_pre = nn.Sequential(
-            NormConv(3, 32),
-            ResUnit(32),
-            NormConv(32, 64),
-            ResUnit(64)
-        )
-        self.rv_att_1 = AttentionModule(64, m=2)
-        self.ra_att_1 = AttentionModule(64, m=2)
-        self.cross_att_1 = BioFusion(d_r, d_a, d_v, 64)
-        self.rv_att_2 = AttentionModule(128, m=1)
-        self.ra_att_2 = AttentionModule(128, m=1)
-        self.cross_att_2 = BioFusion(int(d_r/2), int(d_a/2), int(d_v/2), 128)
-        self.rv_att_3 = AttentionModule(256, m=0)
-        self.ra_att_3 = AttentionModule(256, m=0)
-        self.cross_att_3 = BioFusion(int(d_r/4), int(d_a/4), int(d_v/4), 256)
         
-        self.up_rv_att_3 = ResUnit(512)
-        self.up_ra_att_3 = ResUnit(512)
-        self.up_cross_att_3 = BioUpFusion(int(d_r/8), int(d_a/8), int(d_v/8), 1024)
-        self.up_rv_att_2 = AttentionModule(256, m=0)
-        self.up_ra_att_2 = AttentionModule(256, m=0)
-        self.up_cross_att_2 = BioUpFusion(int(d_r/4), int(d_a/4), int(d_v/4), 512)
-        self.up_rv_att_1 = AttentionModule(128, m=1)
-        self.up_ra_att_1 = AttentionModule(128, m=1)
-        self.up_cross_att_1 = BioUpFusion(int(d_r/2), int(d_a/2), int(d_v/2), 256)
+        self.rv_att_1 = AttentionModule(chan, m=2)
+        self.ra_att_1 = AttentionModule(chan, m=2)
+        self.cross_att_1 = BioFusion(d_r, d_a, d_v, chan)
+        self.rv_att_2 = AttentionModule(chan*2, m=1)
+        self.ra_att_2 = AttentionModule(chan*2, m=1)
+        self.cross_att_2 = BioFusion(int(d_r/2), int(d_a/2), int(d_v/2), chan*2)
+        self.rv_att_3 = AttentionModule(chan*4, m=0)
+        self.ra_att_3 = AttentionModule(chan*4, m=0)
+        self.cross_att_3 = BioFusion(int(d_r/4), int(d_a/4), int(d_v/4), chan*4)
         
+        self.up_rv_att_3 = ResUnit(chan*8)
+        self.up_ra_att_3 = ResUnit(chan*8)
+        self.up_cross_att_3 = BioUpFusion(int(d_r/8), int(d_a/8), int(d_v/8), chan*16)
+        self.up_rv_att_2 = AttentionModule(chan*4, m=0)
+        self.up_ra_att_2 = AttentionModule(chan*4, m=0)
+        self.up_cross_att_2 = BioUpFusion(int(d_r/4), int(d_a/4), int(d_v/4), chan*8)
+        self.up_rv_att_1 = AttentionModule(chan*2, m=1)
+        self.up_ra_att_1 = AttentionModule(chan*2, m=1)
+        self.up_cross_att_1 = BioUpFusion(int(d_r/2), int(d_a/2), int(d_v/2), chan*4)
+        self.final_up = nn.Sequential(
+            NormConv(chan,chan*2),
+            ResUnit(chan*2),
+        )
         
         
     def forward(self, rv, ra):
-        rv_att_0 = self.rv_pre(rv)
-        ra_att_0 = self.ra_pre(ra)
-        rv_att_1 = self.rv_att_1(rv_att_0)
-        ra_att_1 = self.ra_att_1(ra_att_0)
+        
+        rv_att_1 = self.rv_att_1(rv)
+        ra_att_1 = self.ra_att_1(ra)
         rv_cross_att_1, ra_cross_att_1 = self.cross_att_1(rv_att_1, ra_att_1)
         rv_att_2 = self.rv_att_2(rv_cross_att_1)
         ra_att_2 = self.ra_att_2(ra_cross_att_1)
@@ -387,28 +378,72 @@ class UAttentionNet(nn.Module):
         up_ra_att_1 = self.up_ra_att_1(up_cross_ra_att_2)
         up_cross_rv_att_1,up_cross_ra_att_1 = self.up_cross_att_1(torch.concat([up_rv_att_1,rv_cross_att_1],dim=1),torch.concat([up_ra_att_1,ra_cross_att_1],dim=1))
 
-        return up_cross_ra_att_1
+        return F.interpolate(self.final_up(up_cross_ra_att_1), scale_factor=2, mode='bilinear')
+
+class HeatMapPredictNet(nn.Module):
+    def __init__(self, d_r, d_a, d_v, chan):
+        super(HeatMapPredictNet, self).__init__()
+        self.rv_pre = nn.Sequential(
+            NormConv(chan, 32),
+            ResUnit(32),
+            NormConv(32, 64),
+            ResUnit(64)
+        )
+        self.ra_pre = nn.Sequential(
+            NormConv(3, 32),
+            ResUnit(32),
+            NormConv(32, 64),
+            ResUnit(64)
+        )
+        self.sj_u_net = UAttentionNet(d_r, d_a, d_v, 64)
+        self.paf_u_net = UAttentionNet(d_r, d_a, d_v, 64)
+        self.sj_predict_branch =nn.Sequential(
+            ResUnit(128),
+            ResProjectionUnit(128,96,64,1),
+            nn.AdaptiveAvgPool2d([46,82]),
+            ResUnit(64),
+            ResProjectionUnit(64,48,32,1),
+            ResUnit(32),
+            ResProjectionUnit(32,30,26,1),
+            ResUnit(26),
+            ResUnit(26),
+        )
+        self.paf_predict_branch =nn.Sequential(
+            ResUnit(128),
+            ResProjectionUnit(128,96,64,1),
+            nn.AdaptiveAvgPool2d([46,82]),
+            ResUnit(64),
+            ResProjectionUnit(64,64,52,1),
+            ResUnit(52),
+            ResUnit(52),
+        )
+        
+    def forward(self, rv, ra):
+        rv_att_0 = self.rv_pre(rv)
+        ra_att_0 = self.ra_pre(ra)
+        sj_att = self.sj_u_net(rv_att_0,ra_att_0)
+        paf_att = self.paf_u_net(rv_att_0,ra_att_0)
+        sj = self.sj_predict_branch(sj_att)
+        paf = self.paf_predict_branch(paf_att)
+        return sj,paf
 
 def make_model():
     "Helper: Construct a model from hyperparameters."
-    # c = copy.deepcopy
-    # attn = MultiHeadedAttention(head, d_model)
-    # ff = ConvFeedForward(d_model, d_ff, kernel_size=5, dropout=dropout)
+    model = HeatMapPredictNet(64, 64, 120, 3)
 
-    # model = ResAttentionNet()
-
-    # # # This was important from their code.
-    # # # Initialize parameters with Glorot / fan_avg.
-    # for p in model.parameters():
-    #     if p.dim() > 1:
-    #         nn.init.xavier_uniform_(p)
-    # return model
+    # # This was important from their code.
+    # # Initialize parameters with Glorot / fan_avg.
+    for p in model.parameters():
+        if p.dim() > 1:
+            nn.init.xavier_uniform_(p)
+    return model
 
 
 if __name__ == '__main__':
     rv = torch.randn(16, 3, 64, 120)
     ra = torch.randn(16, 3, 64, 64)
     re = torch.randn(16, 3, 64, 64)
-    norm_conv1 = UAttentionNet(64, 64, 120, 3)
-    ra1 = norm_conv1(rv, ra)
-    print(ra1.shape)
+    norm_conv1 = HeatMapPredictNet(64, 64, 120, 3)
+    sj,paf = norm_conv1(rv, ra)
+    print(sj.shape)
+    print(paf.shape)
