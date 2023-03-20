@@ -7,7 +7,8 @@ from torch.utils.data import random_split, SubsetRandomSampler
 import yaml
 
 with open('./config/sconfig_v1.yaml') as f:
-        config = yaml.safe_load(f)
+    config = yaml.safe_load(f)
+
 
 class RadDatesetCacheDataset(Dataset):
     def __init__(self,
@@ -16,30 +17,29 @@ class RadDatesetCacheDataset(Dataset):
         super(RadDatesetCacheDataset, self).__init__()
 
         self.data_path = data_path
-        
+
         with open('{}/cached/1.json'.format(data_path), 'r') as file:
             self.samples = json.load(file)
 
     def __getitem__(self, i):
-        rd = np.load(self.samples[i]['rd_file'],allow_pickle=True)
-        ra = np.load(self.samples[i]['ra_file'],allow_pickle=True)
-        re = np.load(self.samples[i]['re_file'],allow_pickle=True)
-        tag = np.load(self.samples[i]['tag_file'],allow_pickle=True)
+        rd = np.load(self.samples[i]['rd_file'], allow_pickle=True)
+        ra = np.load(self.samples[i]['ra_file'], allow_pickle=True)
+        heatmap = np.load(self.samples[i]['tag_file'], allow_pickle=True)
         pic = self.samples[i]['pic_file']
-        return rd[:,:],ra,re,tag,pic
+        return rd, ra, heatmap, pic
 
     def __len__(self):
         return len(self.samples)
 
     @staticmethod
     def collate_fn(batch):
-        rd,ra,re,tag,pic  = zip(*batch)
+        rd, ra, heatmap, pic = zip(*batch)
         rd = np.stack(rd).astype(np.float32)
         ra = np.stack(ra).astype(np.float32)
-        re = np.stack(re).astype(np.float32)
-        tag = np.stack(tag).astype(np.float32)
-        return torch.tensor(rd,requires_grad=True),torch.tensor(ra,requires_grad=True),torch.tensor(re,requires_grad=True),torch.tensor(tag,requires_grad=True),pic
-        
+        heatmap = np.stack(heatmap).astype(np.float32)
+        return torch.tensor(rd, requires_grad=True), torch.tensor(ra, requires_grad=True), torch.tensor(heatmap, requires_grad=True), pic
+
+
 def create_dataloader(
     data_path='data',
     batch_size=8,
@@ -70,7 +70,7 @@ def create_dataloaders(
     assert(train_ratio > 0 and train_ratio < 1)
 
     dataset = RadDatesetCacheDataset(data_path=data_path)
-    
+
     sample_count = len(dataset)
     train_index, val_index = \
         random_split(range(sample_count),
@@ -84,7 +84,7 @@ def create_dataloaders(
 
     train_sampler = SubsetRandomSampler(train_index)
     val_sampler = SubsetRandomSampler(val_index)
-    
+
     train_loader = DataLoader(dataset, batch_size,
                               num_workers=num_workers,
                               sampler=train_sampler,
@@ -94,14 +94,14 @@ def create_dataloaders(
                             sampler=val_sampler,
                             collate_fn=RadDatesetCacheDataset.collate_fn)
 
-
     return dataset, train_loader, val_loader
 
 
-if __name__ == "__main__" : 
+if __name__ == "__main__":
     dataset, train_loader, val_loader = create_dataloaders()
-    for i, ( rd,ra,re,tag) in enumerate(train_loader):
+    for i, (rd, ra, heatmap, pic) in enumerate(train_loader):
         pass
+        print('a')
         # aa = Skeleton[0,3:].reshape((-1,32,6)).numpy()
         # source_data = aa[1,:,:3]
         # trans_data = source_data[:]
@@ -115,6 +115,6 @@ if __name__ == "__main__" :
         # point_cloud.points = open3d.utility.Vector3dVector(trans_data)
         # point_cloud.paint_uniform_color((0,255,0))
         # open3d.visualization.draw_geometries([point_cloud],point_show_normal=True)
-        pass 
+        pass
     for i, (RD, RA, RE, Skeleton) in enumerate(val_loader):
-        pass 
+        pass

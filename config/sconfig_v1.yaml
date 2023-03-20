@@ -27,15 +27,15 @@ dataset:
     range_res : 0.656 #0.082*8
     range_max : 5.248 #0.082*8*8
     range_num : 8
-  init_data_path : "/home/zhang_t/workspace/data/data_res"
-  experiments_config_path : "/home/zhang_t/workspace/data/experiments_config.xls"
+  init_data_path : "/data/zhang_t/data/data_res"
+  experiments_config_path : "/data/zhang_t/data/experiments_config.xls"
   is_split : false #true 训练集和验证集为两个不同的目录
-  save_path : "ninePeople"
+  save_path : "heatmap_init"
   train_path :
   val_path : 
   train_config :
     person : ['张螣','常远策','郭世纪','薛涵睿','胡杨','毕展语','孙策睿','完颜','张晓荣']
-    place : ['宽阔走廊','大工位','茶水间','阳台','办公室','会议室','大工位']
+    place : ['宽阔走廊','大工位','阳台','办公室','会议室']
     person_num : ['','双人','疑似双人']
 
         
