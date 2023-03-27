@@ -417,7 +417,9 @@ class HeatMapPredictNet(nn.Module):
             ResUnit(52),
             ResUnit(52),
         )
-        
+        self.heatmap_branch = nn.Sequential(
+            nn.Sigmoid()
+        )
     def forward(self, rv, ra):
         rv_att_0 = self.rv_pre(rv)
         ra_att_0 = self.ra_pre(ra)
@@ -425,7 +427,9 @@ class HeatMapPredictNet(nn.Module):
         paf_att = self.paf_u_net(rv_att_0,ra_att_0)
         sj = self.sj_predict_branch(sj_att)
         paf = self.paf_predict_branch(paf_att)
-        return sj,paf
+        heatmap = torch.concat([sj,paf],dim=1)
+
+        return self.heatmap_branch(heatmap)
 
 def make_model():
     "Helper: Construct a model from hyperparameters."
@@ -444,6 +448,5 @@ if __name__ == '__main__':
     ra = torch.randn(16, 3, 64, 64)
     re = torch.randn(16, 3, 64, 64)
     norm_conv1 = HeatMapPredictNet(64, 64, 120, 3)
-    sj,paf = norm_conv1(rv, ra)
-    print(sj.shape)
-    print(paf.shape)
+    predict = norm_conv1(rv, ra)
+    print(predict.shape)

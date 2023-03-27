@@ -1,10 +1,11 @@
-
+import os
+os.environ['CUDA_LAUNCH_BLOCKING'] = '1'
 from dataset.dataLoader import create_dataloaders,create_dataloader
 from model.ResAttentionNet import make_model
 # from model.AttentionResNet import make_model
 import torch
 import json
-from utils.utils import CRFLoss,MyLoss,CountIndex
+from utils.utils import CRFLoss,MyLoss,CountIndex,HeatLoss
 from torch.utils.tensorboard import SummaryWriter
 from torch.optim.lr_scheduler import StepLR
 import time
@@ -14,6 +15,8 @@ from show_res import visualize_fall
 
 import warnings
 warnings.filterwarnings("ignore")
+
+
 
 parser = argparse.ArgumentParser()            # 创建参数解析器
 parser.add_argument('--config', default='./config/sconfig_v1.yaml', type=str)   # 添加参数
@@ -53,7 +56,7 @@ def main():
         train_data_loader = create_dataloader()
         val_data_loader = create_dataloader()   
     else:
-        train_dataset, train_data_loader, val_data_loader = create_dataloaders(
+        dataset, train_data_loader, val_data_loader = create_dataloaders(
             data_path='data_res/{}'.format(config['dataset']['save_path']),
             batch_size=config['train']['batch_size'],
             num_workers=config['train']['num_workers']
@@ -61,8 +64,8 @@ def main():
     
 
     #criterion = CRFLoss(alpha=config['loss_alpha'])
-    criterion = MyLoss()
-    count_criterion = CountIndex()
+    criterion = HeatLoss()
+    count_criterion = HeatLoss()
     optimizer = torch.optim.Adam(
         model.parameters(),
         lr=config['train']['learning_rate']['base_learning_rate']
@@ -80,10 +83,11 @@ def main():
     
     for e in range(epoch):
         model.train()   
-        train(e, model, train_data_loader, criterion, optimizer,count_criterion)
+        train(e, model,train_data_loader, criterion, optimizer,count_criterion)
 
         model.eval()
-        evaluate(e, model, val_data_loader, criterion, optimizer ,count_criterion)
+        # model.eval时，batchnorm的均值和方差是固定的，最后输出的结果存在NAN
+        evaluate(e, model,val_data_loader  , criterion, optimizer ,count_criterion)
 
         lr_scheduler.step()
         writer.flush()
@@ -104,15 +108,14 @@ def train(epoch, model, data_loader, criterion, optimizer, count_criterion):
         #detection classification
         #DTT,DTF,DFT,DFF,Dtotal, CTT,CTF,CFT,CFF,Ctotal
         count = torch.zeros([10])
-    for i, (rd,ra,re,tag,pic) in enumerate(data_loader):
+    for i, (rd, ra, heatmap, pic)  in enumerate(data_loader):
         
         rd = rd.to(device)
         ra = ra.to(device)
-        re = re.to(device)
-        tag = tag.to(device)
+        heatmap = heatmap.to(device)
 
-        predict= model(rd,ra,re)
-        loss = criterion(predict, tag)
+        predict= model(rd,ra)
+        loss = criterion(predict, heatmap)
         
         optimizer.zero_grad()
         loss.backward()
@@ -121,23 +124,13 @@ def train(epoch, model, data_loader, criterion, optimizer, count_criterion):
         total_loss += loss.item()
         total_batch += 1
 
-        if (config['train']['is_count']):
-            count += count_criterion(predict, tag)
-
         if i % 20 == 0:
-            if (config['train']['is_count']):
-                print('epoch:{:0>3d} || batch {:0>3d} with loss:{:>10f} \n {}'
-                  .format(epoch, i,  loss , count))
-            else:
-                print('epoch:{:0>3d} || batch {:0>3d} with loss:{:>10f}'
-                  .format(epoch, i,  loss))
-            fig = visualize_fall(rd[0,5],ra[0,5],re[0,5],pic[0],tag,predict)
-            writer.add_figure('train_show',fig,figure_index)
-            figure_index+=1
+            print('epoch:{:0>3d} || batch {:0>3d} with loss:{:>10f}'
+                .format(epoch, i,  loss))
+    torch.save(model.state_dict(), log_path['best_model_path'])
     del rd
     del ra
-    del re
-    del tag
+    del heatmap
     del predict
     del loss
     writer.add_scalar('Loss/train', total_loss / total_batch, epoch+1)
@@ -147,27 +140,27 @@ def evaluate(epoch, model, data_loader, criterion, optimizer , count_criterion):
     # evaluate loss
     total_loss = 0
     total_batch = 0
-    if (config['train']['is_count']):
-        #detection classification
-        #DTT,DTF,DFT,DFF,Dtotal, CTT,CTF,CFT,CFF,Ctotal
-        count = torch.zeros([10])
-    for i, (rd,ra,re,tag,pic) in enumerate(data_loader):
-        
-        rd = rd.to(device)
-        ra = ra.to(device)
-        re = re.to(device)
-        tag = tag.to(device)
-        predict= model(rd,ra,re)
-        loss = criterion(predict, tag)
-
-        if (config['train']['is_count']):
-            count += count_criterion(predict, tag)
+    # if (config['train']['is_count']):
+    #     #detection classification
+    #     #DTT,DTF,DFT,DFF,Dtotal, CTT,CTF,CFT,CFF,Ctotal
+    #     count = torch.zeros([10])
+    with torch.no_grad():
+        for i, (rd, ra, heatmap, pic) in enumerate(data_loader):
             
-        total_loss += loss.item()
-        total_batch += 1
-        if i % 50 == 0:
-            print('val epoch:{:0>3d} || batch{:0>3d} loss{:0>10f}'.format(epoch, i,loss.item()))
-            print(count)
+            rd = rd.to(device)
+            ra = ra.to(device)
+            heatmap = heatmap.to(device)
+            predict= model(rd,ra)
+            # assert(torch.sum(predict>=0)==3530592)
+            # assert(torch.sum(predict<=1)==3530592)
+            # assert(torch.sum(heatmap>=0)==3530592)
+            # assert(torch.sum(heatmap<=1)==3530592)
+            loss = criterion(predict, heatmap)
+                
+            # total_loss += loss.item()
+            total_batch += 1
+            if i % 10 == 0:
+                print('val epoch:{:0>3d} || batch{:0>3d} loss{:0>10f}'.format(epoch, i,loss.item()))
     # 保存最佳模型
     average_loss = total_loss / total_batch
     if average_loss < config['train']['best_model']['loss']:
@@ -176,25 +169,22 @@ def evaluate(epoch, model, data_loader, criterion, optimizer , count_criterion):
         torch.save(model.state_dict(), log_path['best_model_path'])
 
     writer.add_scalar('Loss/evaluate', average_loss, epoch)
-    writer.add_scalar('Loss/detection_precision', count[0]/(count[0]+count[2]), epoch)
-    writer.add_scalar('Loss/detection_recall', count[0]/(count[0]+count[1]), epoch)
-    writer.add_scalar('Loss/classify_precision', count[5]/(count[5]+count[7]), epoch)
-    writer.add_scalar('Loss/classify_recall', count[5]/(count[5]+count[6]), epoch)
-    writer.add_text('count',"DTT:{} DTF:{} DFT:{} DFF:{} Dtotal:{} CTT:{} CTF:{} CFT:{} CFF:{} Ctotal:{} ".format(
-                    count[0],count[1],count[2],count[3],count[4],
-                    count[5],count[6],count[7],count[8],count[9]),epoch)
     # 学习率曲线
     writer.add_scalar('Learning Rate',
                       optimizer.param_groups[0]['lr'],
                       epoch)
     print('val epoch:{:0>3d} || batch{:0>3d} loss{:0>10f}'.format(epoch, i,loss.item()))
-    print(count)
+    # print(count)
     # 效果图
     # if epoch % config['demo_interval'] == 0:
     #     demo_figs = demo(model, device, data_loader, writer,
     #                      epoch, config['path']['data_path'], wave_width=400)
     #     # writer.add_figure('demo/evaluate', demo_figs, epoch, True)
     # pass
-
+    del rd
+    del ra
+    del heatmap
+    del predict
+    del loss
 if __name__ == '__main__':
     main()

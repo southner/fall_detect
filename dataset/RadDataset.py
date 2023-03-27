@@ -13,6 +13,15 @@ import cv2 as cv
 with open('./config/sconfig_v1.yaml') as f:
     config = yaml.safe_load(f)
 
+def feature_normalize(dt):
+    mu = np.mean(dt)
+    sigma = np.std(dt)
+    return (dt - mu) / sigma
+def log_norm(dt):
+    dt = np.log(dt+1+1e-6)
+    max = np.max(dt)
+    dt = dt/max
+    return dt
 
 class RadDateset(Dataset):
     # 将文件处理为sample，交给cache函数存下来
@@ -52,7 +61,10 @@ class RadDateset(Dataset):
                 radar_data['doppler_res'], (0, -1, -2))
             radar_data_azimuth = np.transpose(
                 radar_data['azimuth_res'], (0, -1, -2))
-
+            pass
+            radar_data_doppler = log_norm(radar_data_doppler)
+            radar_data_azimuth = log_norm(radar_data_azimuth)
+            
             # range_data = np.load(
             #     opt.join(dir, 'skeleton_range_xyz_res.npy'))/1000
             # x_data = np.load(opt.join(dir,'skeleton_range_res.npy'))
@@ -68,10 +80,13 @@ class RadDateset(Dataset):
                 # sample['Tag'] = np.zeros(
                 #     [config['dataset']['range_config']['range_num'], 8])
                 heatmap = cv.imread(opt.join(
-                    dir, 'open_body/{:0>5d}.png'.format(frame_index)))
+                    dir, 'open_body/{:0>5d}.png'.format(frame_index)),0)
                 if (heatmap is None):
                     continue
-                sample['heatmap'] = heatmap.transpose([0,2,1]).reshape([46,3,78,-1]).transpose([2,0,3,1])
+                heatmap = heatmap.reshape([46,78,-1]).transpose([1,0,2])
+                #26-77为paf paf大部分值为128 129
+                heatmap[26:] = np.abs(129-heatmap[26:])
+                sample['heatmap'] = heatmap/255
                 # mid = frame_index_begin+15
                 self.samples.append(sample)
                 is_useful = False

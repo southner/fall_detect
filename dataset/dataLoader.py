@@ -89,7 +89,7 @@ def create_dataloaders(
                               num_workers=num_workers,
                               sampler=train_sampler,
                               collate_fn=RadDatesetCacheDataset.collate_fn)
-    val_loader = DataLoader(dataset, batch_size,
+    val_loader = DataLoader(dataset, int(batch_size/2),
                             num_workers=num_workers,
                             sampler=val_sampler,
                             collate_fn=RadDatesetCacheDataset.collate_fn)

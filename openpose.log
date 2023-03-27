@@ -1,0 +1,54 @@
+nohup: 忽略输入
+epoch:000 || batch 000 with loss:  0.480096
+epoch:000 || batch 020 with loss:  0.109571
+epoch:000 || batch 040 with loss:  0.041166
+epoch:000 || batch 060 with loss:  0.023906
+epoch:000 || batch 080 with loss:  0.022360
+epoch:000 || batch 100 with loss:  0.022526
+epoch:000 || batch 120 with loss:  0.021262
+epoch:000 || batch 140 with loss:  0.018404
+epoch:000 || batch 160 with loss:  0.021130
+epoch:000 || batch 180 with loss:  0.021787
+epoch:000 || batch 200 with loss:  0.018164
+epoch:000 || batch 220 with loss:  0.020599
+epoch:000 || batch 240 with loss:  0.017193
+epoch:000 || batch 260 with loss:  0.017803
+epoch:000 || batch 280 with loss:  0.018604
+epoch:000 || batch 300 with loss:  0.017376
+epoch:000 || batch 320 with loss:  0.021035
+epoch:000 || batch 340 with loss:  0.014575
+epoch:000 || batch 360 with loss:  0.018316
+epoch:000 || batch 380 with loss:  0.018502
+epoch:000 || batch 400 with loss:  0.019262
+epoch:000 || batch 420 with loss:  0.017575
+val epoch:000 || batch000 loss000.016668
+Traceback (most recent call last):
+  File "/data/zhang_t/southner/train.py", line 179, in <module>
+    main()
+  File "/data/zhang_t/southner/train.py", line 89, in main
+    evaluate(e, model, val_data_loader, criterion, optimizer ,count_criterion)
+  File "/data/zhang_t/southner/train.py", line 150, in evaluate
+    predict= model(rd,ra)
+  File "/home/zhang_t/.conda/envs/mmwave/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1194, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/data/zhang_t/southner/model/ResAttentionNet.py", line 429, in forward
+    paf = self.paf_predict_branch(paf_att)
+  File "/home/zhang_t/.conda/envs/mmwave/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1194, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/home/zhang_t/.conda/envs/mmwave/lib/python3.9/site-packages/torch/nn/modules/container.py", line 204, in forward
+    input = module(input)
+  File "/home/zhang_t/.conda/envs/mmwave/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1194, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/data/zhang_t/southner/model/ResAttentionNet.py", line 92, in forward
+    b2 = self.conv(self.BR(x))
+  File "/home/zhang_t/.conda/envs/mmwave/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1194, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/home/zhang_t/.conda/envs/mmwave/lib/python3.9/site-packages/torch/nn/modules/container.py", line 204, in forward
+    input = module(input)
+  File "/home/zhang_t/.conda/envs/mmwave/lib/python3.9/site-packages/torch/nn/modules/module.py", line 1194, in _call_impl
+    return forward_call(*input, **kwargs)
+  File "/home/zhang_t/.conda/envs/mmwave/lib/python3.9/site-packages/torch/nn/modules/activation.py", line 102, in forward
+    return F.relu(input, inplace=self.inplace)
+  File "/home/zhang_t/.conda/envs/mmwave/lib/python3.9/site-packages/torch/nn/functional.py", line 1457, in relu
+    result = torch.relu(input)
+torch.cuda.OutOfMemoryError: CUDA out of memory. Tried to allocate 128.00 MiB (GPU 1; 23.70 GiB total capacity; 21.78 GiB already allocated; 66.81 MiB free; 21.92 GiB reserved in total by PyTorch) If reserved memory is >> allocated memory try setting max_split_size_mb to avoid fragmentation.  See documentation for Memory Management and PYTORCH_CUDA_ALLOC_CONF

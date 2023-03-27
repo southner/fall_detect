@@ -1,15 +1,15 @@
 train:
   model_version : ResAttentionNetv1
   model_version_details : 原始版本
-  is_count : true
-  load_pretrained_model : true
-  pretrained_model_path : '2023.03.07-20-52'
-  batch_size : 32
-  num_workers : 4
+  is_count : false
+  load_pretrained_model : false
+  pretrained_model_path : '2023.03.27-11-54'
+  batch_size : 24
+  num_workers : 8
   epoch : 100
   log_path : ./runs/
   learning_rate :
-    base_learning_rate : 4.e-4
+    base_learning_rate : 1.e-3  #pose原本为1.e-3
     step_size : 8
     gamma : 0.6
   best_model :
@@ -30,7 +30,7 @@ dataset:
   init_data_path : "/data/zhang_t/data/data_res"
   experiments_config_path : "/data/zhang_t/data/experiments_config.xls"
   is_split : false #true 训练集和验证集为两个不同的目录
-  save_path : "heatmap_init"
+  save_path : "heatmap_log"
   train_path :
   val_path : 
   train_config :
@@ -38,4 +38,4 @@ dataset:
     place : ['宽阔走廊','大工位','阳台','办公室','会议室']
     person_num : ['','双人','疑似双人']
 
-        
+
