@@ -29,7 +29,7 @@ dataset:
     range_num : 8
   init_data_path : "/home/zhang_t/workspace/data/data_res"
   experiments_config_path : "/home/zhang_t/workspace/data/experiments_config.xls"
-  save_path : "six_people"
+  save_path : "ninePeople"
   train_config :
     person : ['张螣','常远策','郭世纪','任梦琪','任楠','薛涵睿']
     place : ['宽阔走廊','大工位','狭窄走廊','狭窄走廊','茶水间','阳台']

@@ -111,7 +111,7 @@ def train(epoch, model, data_loader, criterion, optimizer, count_criterion):
         re = re.to(device)
         tag = tag.to(device)
 
-        predict= model(rd,ra,re)
+        predict= model(rd,ra)
         loss = criterion(predict, tag)
         
         optimizer.zero_grad()
@@ -157,7 +157,7 @@ def evaluate(epoch, model, data_loader, criterion, optimizer , count_criterion):
         ra = ra.to(device)
         re = re.to(device)
         tag = tag.to(device)
-        predict= model(rd,ra,re)
+        predict= model(rd,ra)
         loss = criterion(predict, tag)
 
         if (config['train']['is_count']):

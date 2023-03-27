@@ -12,6 +12,13 @@ import yaml
 with open('./config/sconfig_v1.yaml') as f:
         config = yaml.safe_load(f)
 
+def log_norm(dt):
+    dt = np.log(dt+1+1e-6)
+    max = np.max(dt)
+    dt = dt/max
+    return dt
+
+
 class RadDateset(Dataset):
     #将文件处理为sample，交给cache函数存下来
     def __init__(self,
@@ -46,6 +53,9 @@ class RadDateset(Dataset):
             radar_data_doppler = np.transpose(radar_data['doppler_res'],(0,-1,-2))
             radar_data_azimuth = np.transpose(radar_data['azimuth_res'],(0,-1,-2))
             radar_data_elevation = np.transpose(radar_data['elevation_res'],(0,-1,-2))
+            radar_data_doppler = log_norm(radar_data_doppler)
+            radar_data_azimuth = log_norm(radar_data_azimuth)
+            radar_data_elevation = log_norm(radar_data_elevation)
             
             range_data = np.load(opt.join(dir,'skeleton_range_xyz_res.npy'))/1000
             # x_data = np.load(opt.join(dir,'skeleton_range_res.npy'))
