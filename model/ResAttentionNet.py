@@ -480,8 +480,8 @@ class ResAttentionNet(nn.Module):
         fall_res = torch.permute(res.squeeze(), [0, 2, 1])
         fall_res[:, :, [0, 2, 3, 5]] = F.sigmoid(fall_res[:, :, [0, 2, 3, 5]])
         fall_res[:, :, [1, 4]] = F.relu(fall_res[:, :, [1, 4]])
-        fall_res[:, :, [6, 7]] = F.softmax(fall_res[:, :, [6, 7]])
-        
+        fall_res[:, :, [6, 7]] = F.softmax(fall_res[:, :, [6, 7]], dim=[2])
+
         return fall_res
 
 

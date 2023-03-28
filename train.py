@@ -151,23 +151,24 @@ def evaluate(epoch, model, data_loader, criterion, optimizer , count_criterion):
         #detection classification
         #DTT,DTF,DFT,DFF,Dtotal, CTT,CTF,CFT,CFF,Ctotal
         count = torch.zeros([10])
-    for i, (rd,ra,re,tag,pic) in enumerate(data_loader):
-        
-        rd = rd.to(device)
-        ra = ra.to(device)
-        re = re.to(device)
-        tag = tag.to(device)
-        predict= model(rd,ra)
-        loss = criterion(predict, tag)
-
-        if (config['train']['is_count']):
-            count += count_criterion(predict, tag)
+    with torch.no_grad():
+        for i, (rd,ra,re,tag,pic) in enumerate(data_loader):
             
-        total_loss += loss.item()
-        total_batch += 1
-        if i % 50 == 0:
-            print('val epoch:{:0>3d} || batch{:0>3d} loss{:0>10f}'.format(epoch, i,loss.item()))
-            print(count)
+            rd = rd.to(device)
+            ra = ra.to(device)
+            re = re.to(device)
+            tag = tag.to(device)
+            predict= model(rd,ra)
+            loss = criterion(predict, tag)
+
+            if (config['train']['is_count']):
+                count += count_criterion(predict, tag)
+                
+            total_loss += loss.item()
+            total_batch += 1
+            if i % 50 == 0:
+                print('val epoch:{:0>3d} || batch{:0>3d} loss{:0>10f}'.format(epoch, i,loss.item()))
+                print(count)
     # 保存最佳模型
     average_loss = total_loss / total_batch
     if average_loss < config['train']['best_model']['loss']:
