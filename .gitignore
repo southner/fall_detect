@@ -1,4 +1,8 @@
 /data_res/*
 __pycache__
 /runs/
+*.jpg
+*.log
+/logsave
+*.out
 

@@ -343,7 +343,9 @@ class BioFusion(nn.Module):
     def forward(self, rv, ra):
         assert ra.shape[:2] == rv.shape[:2]
         f_rv = self.rv_conv(self.ra_to_rv(ra, rv))
+        # f_rv = self.rv_conv(f_rv)
         f_ra = self.ra_conv(self.rv_to_ra(rv, ra))
+        # f_ra = self.ra_conv(f_ra)
         return self.rv_max_pool(f_rv), self.ra_max_pool(f_ra)
 
 
@@ -394,15 +396,6 @@ class UAttentionNet(nn.Module):
         self.cross_att_2 = BioFusion(
             int(d_r/2), int(d_a/2), int(d_v/2), chan*2)
         self.rv_att_3 = AttentionModule(chan*4, m=0)
-        self.ra_att_3 = AttentionModule(chan*4, m=0)
-        self.cross_att_3 = BioFusion(
-            int(d_r/4), int(d_a/4), int(d_v/4), chan*4)
-
-        self.up_rv_att_3 = ResUnit(chan*8)
-        self.up_ra_att_3 = ResUnit(chan*8)
-        self.up_cross_att_3 = BioUpFusion(
-            int(d_r/8), int(d_a/8), int(d_v/8), chan*16)
-        self.up_rv_att_2 = AttentionModule(chan*4, m=0)
 
     def forward(self, rv, ra):
 
@@ -413,16 +406,10 @@ class UAttentionNet(nn.Module):
         ra_att_2 = self.ra_att_2(ra_cross_att_1)
         rv_cross_att_2, ra_cross_att_2 = self.cross_att_2(rv_att_2, ra_att_2)
         rv_att_3 = self.rv_att_3(rv_cross_att_2)
-        ra_att_3 = self.ra_att_3(ra_cross_att_2)
-        rv_cross_att_3, ra_cross_att_3 = self.cross_att_3(rv_att_3, ra_att_3)
 
-        up_rv_att_3 = self.up_rv_att_3(rv_cross_att_3)
-        up_ra_att_3 = self.up_ra_att_3(ra_cross_att_3)
-        up_cross_rv_att_3, up_cross_ra_att_3 = self.up_cross_att_3(torch.concat(
-            [up_rv_att_3, rv_cross_att_3], dim=1), torch.concat([up_ra_att_3, ra_cross_att_3], dim=1))
-        up_rv_att_2 = self.up_rv_att_2(up_cross_rv_att_3)
+        
 
-        return up_rv_att_2
+        return rv_att_3
 
 
 class ResAttentionNet(nn.Module):
@@ -480,7 +467,7 @@ class ResAttentionNet(nn.Module):
         fall_res = torch.permute(res.squeeze(), [0, 2, 1])
         fall_res[:, :, [0, 2, 3, 5]] = F.sigmoid(fall_res[:, :, [0, 2, 3, 5]])
         fall_res[:, :, [1, 4]] = F.relu(fall_res[:, :, [1, 4]])
-        fall_res[:, :, [6, 7]] = F.softmax(fall_res[:, :, [6, 7]], dim=[2])
+        fall_res[:, :, [6, 7]] = F.softmax(fall_res[:, :, [6, 7]], dim=2)
 
         return fall_res
 

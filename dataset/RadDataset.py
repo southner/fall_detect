@@ -53,9 +53,9 @@ class RadDateset(Dataset):
             radar_data_doppler = np.transpose(radar_data['doppler_res'],(0,-1,-2))
             radar_data_azimuth = np.transpose(radar_data['azimuth_res'],(0,-1,-2))
             radar_data_elevation = np.transpose(radar_data['elevation_res'],(0,-1,-2))
-            # radar_data_doppler = log_norm(radar_data_doppler)
-            # radar_data_azimuth = log_norm(radar_data_azimuth)
-            # radar_data_elevation = log_norm(radar_data_elevation)
+            radar_data_doppler = log_norm(radar_data_doppler)
+            radar_data_azimuth = log_norm(radar_data_azimuth)
+            radar_data_elevation = log_norm(radar_data_elevation)
             
             range_data = np.load(opt.join(dir,'skeleton_range_xyz_res.npy'))/1000
             # x_data = np.load(opt.join(dir,'skeleton_range_res.npy'))

@@ -30,7 +30,7 @@ dataset:
   init_data_path : "/home/zhang_t/hdd/data/data_res"
   experiments_config_path : "/home/zhang_t/hdd/data/experiments_config.xls"
   is_split : false #true 训练集和验证集为两个不同的目录
-  save_path : "ninePeopleNoLog"
+  save_path : "ninePeople"
   train_path :
   val_path : 
   train_config :

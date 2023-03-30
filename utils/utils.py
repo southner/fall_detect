@@ -37,11 +37,13 @@ class MyLoss(nn.Module):
         #total_loss = (l_coord*loc_loss + contain_loss + not_contain_loss + l_noobj*nooobj_loss + class_loss)
         super(MyLoss,self).__init__()
         self.loss = nn.MSELoss()
-        self.loc_scale = 1
+        self.cross_entropy = nn.BCELoss()
+        self.loc_scale = 0.8
         self.l_noobj = 1
         self.cotain_scale = 2
         self.not_cotain_scale = 1
-        self.class_scale = 1
+        self.class_scale = 0.5
+        self.fall_vs_norm_scale = 10
         self.threld = config['train']['threld']
     def compute_iou(self,box1, box2):
         pass
@@ -80,17 +82,23 @@ class MyLoss(nn.Module):
         
         coo_mask = target_tensor[:,:,2] > self.threld   #本来有的mask ==1
         noo_mask = target_tensor[:,:,2] <= self.threld  #本来没有的mask  ==0
-        
+        coo_fall_mask = (target_tensor[:,:,2] > self.threld) & (target_tensor[:,:,7]==1)
+        coo_normal_mask = (target_tensor[:,:,2] > self.threld) & (target_tensor[:,:,6]==1)
+
         coo_mask = coo_mask.unsqueeze(-1).expand_as(target_tensor)
         noo_mask = noo_mask.unsqueeze(-1).expand_as(target_tensor)
-        
+        coo_fall_mask = coo_fall_mask.unsqueeze(-1).expand_as(target_tensor)
+        coo_normal_mask = coo_normal_mask.unsqueeze(-1).expand_as(target_tensor)
+
         coo_pred = pred_tensor[coo_mask].view(-1,8) #本来有的对应的预测
         box_pred = coo_pred[:,:6].contiguous().view(-1,3)
         class_pred = coo_pred[:,6:]
-
+        
         coo_target = target_tensor[coo_mask].view(-1,8)    #本来有的对应的真实值
         box_target = coo_target[:,:6].contiguous().view(-1,3)
         class_target = coo_target[:,6:]
+
+        
 
         #loss分为3部分 
         # obj_loss 是否存在目标
@@ -152,6 +160,16 @@ class MyLoss(nn.Module):
         #存在可信度计算   loss的目的是让box_pred_not_response越小越好。就是想让不存在的可能性越小越好
         not_contain_loss = F.mse_loss(box_pred_not_response[:,2],box_target_not_response[:,2],size_average=False)+1e-6
 
+        # cross_entropy loss
+        # class_target_fall = target_tensor[coo_fall_mask].view(-1,8)[:,7]
+        # class_target_normal = target_tensor[coo_normal_mask].view(-1,8)[:,6]
+        # class_pred_fall = pred_tensor[coo_fall_mask].view(-1,8)[:,7]
+        # class_pred_normal = pred_tensor[coo_normal_mask].view(-1,8)[:,6]
+        # class_fall_loss = self.cross_entropy(class_pred_fall,class_target_fall) if len(class_pred_fall)>0 else 0
+        # class_normal_loss = self.cross_entropy(class_pred_normal+1e-0006,class_target_normal)
+        # class_loss =  self.fall_vs_norm_scale*class_fall_loss + class_normal_loss
+
+
         class_loss = F.mse_loss(class_pred,class_target,size_average=False)
 
         #loc_loss 本来有预测有的定位loss
@@ -160,7 +178,7 @@ class MyLoss(nn.Module):
         #nooobj_loss 本来无预测有的置信度loss
         #class_loss 类别loss
         total_loss = (self.loc_scale*loc_loss + self.cotain_scale*contain_loss + not_contain_loss + self.l_noobj*nooobj_loss + self.class_scale*class_loss)+1e-6
-
+        # total_loss = class_loss
         return total_loss
 
 class CountIndex(nn.Module):
