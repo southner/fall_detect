@@ -16,6 +16,8 @@ def cache_Rad(data_path=config['dataset']['init_data_path'],
     ra_folder = Path(save_path) / 'cached/ra'
     re_folder = Path(save_path) / 'cached/re'
     tag_folder = Path(save_path) / 'cached/tag'
+    heatmap_folder = Path(save_path) / 'cached/heatmap'
+
     if not rd_folder.exists():
         rd_folder.mkdir(parents=True)
     if not ra_folder.exists():
@@ -24,7 +26,9 @@ def cache_Rad(data_path=config['dataset']['init_data_path'],
         re_folder.mkdir(parents=True)
     if not tag_folder.exists():
         tag_folder.mkdir(parents=True)
-        
+    if not heatmap_folder.exists():
+        heatmap_folder.mkdir(parents=True)
+
     samples_info = []
     sample_num = len(dataset)
     print('========== Preprocessing ==========')
@@ -37,6 +41,8 @@ def cache_Rad(data_path=config['dataset']['init_data_path'],
         ra_file = ra_folder / (str(i)+'.npy')
         re_file = re_folder / (str(i)+'.npy')
         tag_file = tag_folder / (str(i)+'.npy')
+        heatmap_file = heatmap_folder / (str(i)+'.npy')
+
         # image_file  # 打算在可视化时用
 
         samples_info.append({
@@ -44,6 +50,7 @@ def cache_Rad(data_path=config['dataset']['init_data_path'],
             'ra_file' : str(ra_file),
             're_file' : str(re_file),
             'tag_file' : str(tag_file),
+            'heatmap_file' : str(heatmap_file),
             'pic_file' : sample['pic'],
             # 'image_file': image_file,
         })
@@ -52,7 +59,8 @@ def cache_Rad(data_path=config['dataset']['init_data_path'],
         np.save(str(ra_file), sample['RA'],allow_pickle=True)
         np.save(str(re_file), sample['RE'],allow_pickle=True)
         np.save(str(tag_file), sample['Tag'],allow_pickle=True) 
-        
+        np.save(str(heatmap_file), sample['heatmap'],allow_pickle=True) 
+
         if i % 100 == 0:
             print('(Preprocessing): {:0>6d} Done || {:0>6d} Left || {:0>5.0f} s'.format(
                 i, sample_num-i, time.time()-time_start))
@@ -60,6 +68,9 @@ def cache_Rad(data_path=config['dataset']['init_data_path'],
     with open('{}/cached/1.json'.format(save_path), 'w') as file:
         json.dump(samples_info, file)
 
+    with open('{}/cached/config.yaml'.format(save_path), 'w') as file:
+        yaml.dump(config,file,allow_unicode=True)
+        
 
 if __name__ == "__main__":
     cache_Rad()

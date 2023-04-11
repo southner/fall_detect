@@ -2,21 +2,22 @@ train:
   model_version : ResAttentionNetv1
   model_version_details : 原始版本
   is_count : true
-  load_pretrained_model : false
-  pretrained_model_path : '2023.02.21-16-21'
-  batch_size : 64
+  load_pretrained_model : true
+  pretrained_model_path : '2023.04.10-20-01'
+  batch_size : 36
   num_workers : 4
   epoch : 100
   log_path : ./runs/
   learning_rate :
-    base_learning_rate : 4.e-4
+    base_learning_rate : 8.e-4
     step_size : 8
     gamma : 0.6
   best_model :
     loss : 10000  #替代符 在训练过程中发现小于它的会修改，训练结束后保存
     epoch : 0
-  train_ratio : 0.8
+  train_ratio : 0.7
   threld : 0.70
+  device : '0'
 
 dataset:
   img_size:
@@ -27,10 +28,13 @@ dataset:
     range_res : 0.656 #0.082*8
     range_max : 5.248 #0.082*8*8
     range_num : 8
+  amuith_config:
+    amuith_max : 180/8
+    amuith_num : 9
   init_data_path : "/home/zhang_t/hdd/data/data_res"
   experiments_config_path : "/home/zhang_t/hdd/data/experiments_config.xls"
   is_split : false #true 训练集和验证集为两个不同的目录
-  save_path : "ninePeople"
+  save_path : "ninePeopleRA"
   train_path :
   val_path : 
   train_config :

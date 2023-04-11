@@ -4,7 +4,7 @@ from model.ResAttentionNet import make_model
 # from model.AttentionResNet import make_model
 import torch
 import json
-from utils.utils import CRFLoss,MyLoss,CountIndex
+from utils.utils import CRFLoss,MyLoss,FallCount
 from torch.utils.tensorboard import SummaryWriter
 from torch.optim.lr_scheduler import StepLR
 import time
@@ -29,10 +29,12 @@ log_path = {
     'final_model_path': '{}/final'.format(log_dir),
     'best_model_path': '{}/best'.format(log_dir),
 }
-device = torch.device('cuda:0' if torch.cuda.is_available()
+device = torch.device('cuda:'+config['train']['device'] if torch.cuda.is_available()
                     else 'cpu')
 writer = SummaryWriter(log_dir)
 
+# 不显示科学计数法
+torch.set_printoptions(sci_mode=False)
 
 def main():
     model = make_model().to(device)
@@ -62,7 +64,7 @@ def main():
 
     #criterion = CRFLoss(alpha=config['loss_alpha'])
     criterion = MyLoss()
-    count_criterion = CountIndex()
+    count_criterion = FallCount()
     optimizer = torch.optim.Adam(
         model.parameters(),
         lr=config['train']['learning_rate']['base_learning_rate']
@@ -98,77 +100,105 @@ def main():
 
 def train(epoch, model, data_loader, criterion, optimizer, count_criterion):
     total_loss = 0
+    total_sep_fall = torch.tensor([0,0,0,0,0])
+    total_sep_heat = torch.tensor([0,0,0])
+    
     total_batch = 0
     figure_index = len(data_loader)//10*epoch
     if (config['train']['is_count']):
         #detection classification
         #DTT,DTF,DFT,DFF,Dtotal, CTT,CTF,CFT,CFF,Ctotal
         count = torch.zeros([10])
-    for i, (rd,ra,re,tag,pic) in enumerate(data_loader):
+    for i, ( rd,ra,re,tag,heatmap,pic) in enumerate(data_loader):
         
         rd = rd.to(device)
         ra = ra.to(device)
-        re = re.to(device)
-        tag = tag.to(device)
+        tag = tag.to(device)    
+        heatmap = heatmap.to(device)
 
-        predict= model(rd,ra)
-        loss = criterion(predict, tag)
+        fall_pred, heat_pred= model(rd,ra)
+        loss,sep_fall,sep_heat = criterion(fall_pred, tag, heat_pred, heatmap)
         
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
         total_loss += loss.item()
+        total_sep_fall = total_sep_fall + torch.tensor([a.item() for a in sep_fall])
+        total_sep_heat = total_sep_heat + torch.tensor([a.item() for a in sep_heat])
+
         total_batch += 1
 
         if (config['train']['is_count']):
-            count += count_criterion(predict, tag)
+            count += count_criterion(fall_pred, tag)
 
         if i % 20 == 0:
+            
+            print('train epoch:{:0>3d} || batch{:0>3d}'.format(epoch, i))
+            print('static : loss {:0>5f} \nloc_loss {:0>5f}  contain_loss {:0>5f} not_contain_loss {:0>5f} nooobj_loss {:0>5f} class_loss {:0>5f} \nbg_loss {:0>5f} jhm_loss {:0>5f} paf_loss {:0>5f}'.\
+                      format(total_loss / total_batch, total_sep_fall[0] / total_batch, total_sep_fall[1] / total_batch, total_sep_fall[2] / total_batch, total_sep_fall[3] / total_batch,\
+                              total_sep_fall[4] / total_batch, total_sep_heat[0] / total_batch, total_sep_heat[1] / total_batch, total_sep_heat[2] / total_batch))
             if (config['train']['is_count']):
-                print('epoch:{:0>3d} || batch {:0>3d} with loss:{:>10f} \n {}'
-                  .format(epoch, i,  loss , count))
-            else:
-                print('epoch:{:0>3d} || batch {:0>3d} with loss:{:>10f}'
-                  .format(epoch, i,  loss))
-            fig = visualize_fall(rd[0,5],ra[0,5],re[0,5],pic[0],tag,predict)
-            writer.add_figure('train_show',fig,figure_index)
-            figure_index+=1
+                print('count : {}\n---------------'.format(count))
+                # fig = visualize_fall(rd[0,5],ra[0,5],re[0,5],pic[0],tag,predict)
+            # writer.add_figure('train_show',fig,figure_index)
+            # figure_index+=1
     del rd
     del ra
-    del re
     del tag
-    del predict
+    del heatmap
+    del fall_pred
+    del heat_pred
     del loss
-    writer.add_scalar('Loss/train', total_loss / total_batch, epoch+1)
+    writer.add_scalar('train/loss', total_loss / total_batch, epoch+1)
+    writer.add_scalar('train/loc_loss', total_sep_fall[0] / total_batch, epoch+1)
+    writer.add_scalar('train/contain_loss', total_sep_fall[1] / total_batch, epoch+1)
+    writer.add_scalar('train/not_contain_loss', total_sep_fall[2] / total_batch, epoch+1)
+    writer.add_scalar('train/nooobj_loss', total_sep_fall[3] / total_batch, epoch+1)
+    writer.add_scalar('train/class_loss', total_sep_fall[4] / total_batch, epoch+1)
+    writer.add_scalar('train/bg_loss', total_sep_heat[0] / total_batch, epoch+1)
+    writer.add_scalar('train/jhm_loss', total_sep_heat[1] / total_batch, epoch+1)
+    writer.add_scalar('train/paf_loss', total_sep_heat[2] / total_batch, epoch+1)
     
 
 def evaluate(epoch, model, data_loader, criterion, optimizer , count_criterion):
     # evaluate loss
     total_loss = 0
     total_batch = 0
+    total_sep_fall = torch.tensor([0,0,0,0,0])
+    total_sep_heat = torch.tensor([0,0,0])
     if (config['train']['is_count']):
         #detection classification
         #DTT,DTF,DFT,DFF,Dtotal, CTT,CTF,CFT,CFF,Ctotal
         count = torch.zeros([10])
     with torch.no_grad():
-        for i, (rd,ra,re,tag,pic) in enumerate(data_loader):
+        for i, ( rd,ra,re,tag,heatmap,pic) in enumerate(data_loader):
             
             rd = rd.to(device)
             ra = ra.to(device)
-            re = re.to(device)
-            tag = tag.to(device)
-            predict= model(rd,ra)
-            loss = criterion(predict, tag)
+            tag = tag.to(device)    
+            heatmap = heatmap.to(device)
+
+            fall_pred, heat_pred= model(rd,ra)
+            loss,sep_fall,sep_heat = criterion(fall_pred, tag, heat_pred, heatmap)
 
             if (config['train']['is_count']):
-                count += count_criterion(predict, tag)
+                count += count_criterion(fall_pred, tag)
                 
             total_loss += loss.item()
+            total_sep_fall = total_sep_fall + torch.tensor([a.item() for a in sep_fall])
+            total_sep_heat = total_sep_heat + torch.tensor([a.item() for a in sep_heat])
+
             total_batch += 1
+
             if i % 50 == 0:
-                print('val epoch:{:0>3d} || batch{:0>3d} loss{:0>10f}'.format(epoch, i,loss.item()))
-                print(count)
+                print('val epoch:{:0>3d} || batch{:0>3d}'.format(epoch, i))
+                print('static : loss {:0>5f} \nloc_loss {:0>5f}  contain_loss {:0>5f} not_contain_loss {:0>5f} nooobj_loss {:0>5f} class_loss {:0>5f} \nbg_loss {:0>5f} jhm_loss {:0>5f} paf_loss {:0>5f}'.\
+                        format(total_loss / total_batch, total_sep_fall[0] / total_batch, total_sep_fall[1] / total_batch, total_sep_fall[2] / total_batch, total_sep_fall[3] / total_batch,\
+                                total_sep_fall[4] / total_batch, total_sep_heat[0] / total_batch, total_sep_heat[1] / total_batch, total_sep_heat[2] / total_batch))
+                if (config['train']['is_count']):
+                    print('count : {}\n---------------'.format(count))
+                
     # 保存最佳模型
     average_loss = total_loss / total_batch
     if average_loss < config['train']['best_model']['loss']:
@@ -176,7 +206,17 @@ def evaluate(epoch, model, data_loader, criterion, optimizer , count_criterion):
         config['train']['best_model']['epoch'] = epoch
         torch.save(model.state_dict(), log_path['best_model_path'])
 
-    writer.add_scalar('Loss/evaluate', average_loss, epoch)
+    
+
+    writer.add_scalar('evaluate/loss', total_loss / total_batch, epoch+1)
+    writer.add_scalar('evaluate/loc_loss', total_sep_fall[0] / total_batch, epoch+1)
+    writer.add_scalar('evaluate/contain_loss', total_sep_fall[1] / total_batch, epoch+1)
+    writer.add_scalar('evaluate/not_contain_loss', total_sep_fall[2] / total_batch, epoch+1)
+    writer.add_scalar('evaluate/nooobj_loss', total_sep_fall[3] / total_batch, epoch+1)
+    writer.add_scalar('evaluate/class_loss', total_sep_fall[4] / total_batch, epoch+1)
+    writer.add_scalar('evaluate/bg_loss', total_sep_heat[0] / total_batch, epoch+1)
+    writer.add_scalar('evaluate/jhm_loss', total_sep_heat[1] / total_batch, epoch+1)
+    writer.add_scalar('evaluate/paf_loss', total_sep_heat[2] / total_batch, epoch+1)
     writer.add_scalar('Loss/detection_precision', count[0]/(count[0]+count[2]), epoch)
     writer.add_scalar('Loss/detection_recall', count[0]/(count[0]+count[1]), epoch)
     writer.add_scalar('Loss/classify_precision', count[5]/(count[5]+count[7]), epoch)
@@ -190,6 +230,13 @@ def evaluate(epoch, model, data_loader, criterion, optimizer , count_criterion):
                       epoch)
     print('val epoch:{:0>3d} || batch{:0>3d} loss{:0>10f}'.format(epoch, i,loss.item()))
     print(count)
+    del rd
+    del ra
+    del tag
+    del heatmap
+    del fall_pred
+    del heat_pred
+    del loss
     # 效果图
     # if epoch % config['demo_interval'] == 0:
     #     demo_figs = demo(model, device, data_loader, writer,

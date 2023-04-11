@@ -39,7 +39,7 @@ class Myloss(nn.Module):
         area2 = (box2[:,2]-box2[:,0]) * (box2[:,3]-box2[:,1])  # [M,]
         area1 = area1.unsqueeze(1).expand_as(inter)  # [N,] -> [N,1] -> [N,M]
         area2 = area2.unsqueeze(0).expand_as(inter)  # [M,] -> [1,M] -> [N,M]
- 
+        
         iou = inter / (area1 + area2 - inter)
         return iou
     

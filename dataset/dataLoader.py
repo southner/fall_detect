@@ -25,20 +25,22 @@ class RadDatesetCacheDataset(Dataset):
         ra = np.load(self.samples[i]['ra_file'],allow_pickle=True)
         re = np.load(self.samples[i]['re_file'],allow_pickle=True)
         tag = np.load(self.samples[i]['tag_file'],allow_pickle=True)
+        heatmap = np.load(self.samples[i]['heatmap_file'], allow_pickle=True)
         pic = self.samples[i]['pic_file']
-        return rd[:,:],ra,re,tag,pic
+        return rd[:,:],ra,re,tag,heatmap,pic
 
     def __len__(self):
         return len(self.samples)
 
     @staticmethod
     def collate_fn(batch):
-        rd,ra,re,tag,pic  = zip(*batch)
+        rd,ra,re,tag,heatmap,pic  = zip(*batch)
         rd = np.stack(rd).astype(np.float32)
         ra = np.stack(ra).astype(np.float32)
         re = np.stack(re).astype(np.float32)
         tag = np.stack(tag).astype(np.float32)
-        return torch.tensor(rd,requires_grad=True),torch.tensor(ra,requires_grad=True),torch.tensor(re,requires_grad=True),torch.tensor(tag,requires_grad=True),pic
+        heatmap = np.stack(heatmap).astype(np.float32)
+        return torch.tensor(rd,requires_grad=True),torch.tensor(ra,requires_grad=True),torch.tensor(re,requires_grad=True),torch.tensor(tag,requires_grad=True),torch.tensor(heatmap,requires_grad=True),pic
         
 def create_dataloader(
     data_path='data',
@@ -100,7 +102,7 @@ def create_dataloaders(
 
 if __name__ == "__main__" : 
     dataset, train_loader, val_loader = create_dataloaders()
-    for i, ( rd,ra,re,tag) in enumerate(train_loader):
+    for i, ( rd,ra,re,tag,heatmap,pic) in enumerate(train_loader):
         pass
         # aa = Skeleton[0,3:].reshape((-1,32,6)).numpy()
         # source_data = aa[1,:,:3]
